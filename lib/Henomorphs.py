@@ -12,8 +12,8 @@ import random
 class Henomorphs:
     # Initialize endpoint URL
     node_url = "https://polygon-rpc.com"
-    max_attempts = 3  # Attempt 3 times if transaction fails
-    random_action_on_fail = True
+    max_attempts = 5  # Attempt 5 times if transaction fails
+    random_action_on_fail = 2  # Randomize action after 2 fail attempts
 
     def __init__(self, password):
         # Create the node connection
@@ -129,7 +129,10 @@ class Henomorphs:
                     data = list(data[1])
                     if int(time.time()) - int(data[6]) > 60 * 60:
                         action = self.tokensActions[i]
-                        if attempt < self.max_attempts and self.random_action_on_fail:
+                        if (
+                            self.max_attempts - attempt >= self.random_action_on_fail
+                            and self.random_action_on_fail > 0
+                        ):
                             action = random.randint(1, 5)
                         self._PerformColonyAction(t, action)
                         time.sleep(3)
@@ -139,7 +142,6 @@ class Henomorphs:
                             + str(t)
                             + ", was performed action recently"
                         )
-                    i += 1
                     attempt = 0
                 except Exception as e:
                     print("Error: ")
@@ -148,6 +150,8 @@ class Henomorphs:
                     attempt -= 1
                     if attempt > 0:
                         print("Retrying ...")
+                    time.sleep(3)
+            i += 1
 
     def PrintInfo(self):
         print("Getting data...")
@@ -190,7 +194,24 @@ class Henomorphs:
         attempt = self.max_attempts
         while attempt > 0:
             try:
-                self._Inspect()
+                tMin = time.time()
+                for t in self.tokens:
+                    data = self.contract_chargepod.functions.checkBiopodCalibration(
+                        2, t
+                    ).call()[1]
+                    t = int(time.time()) - int(data[10])
+                    if t < tMin:
+                        tMin = t
+                if tMin <= 12 * 60 * 60:
+                    tr = 12 * 60 * 60 - tMin
+                    print(
+                        "Cannot inspect. Next inspection possible in: "
+                        + str(int(tr / 60 / 60))
+                        + ":"
+                        + str(int((int(tr / 60)) - 60 * int(tr / 60 / 60)))
+                    )
+                else:
+                    self._Inspect()
                 attempt = 0
             except Exception as e:
                 print("Error: ")
@@ -199,9 +220,15 @@ class Henomorphs:
                 attempt -= 1
                 if attempt > 0:
                     print("Retrying ...")
+                time.sleep(3)
 
     def _RepairWear(self, itemID, wearReduction):
-        print("Performing wear repair: " + str(itemID))
+        print(
+            "Performing wear repair: "
+            + str(itemID)
+            + ", Reduction: "
+            + str(wearReduction)
+        )
         self.Transaction(
             self.contract_staking.functions.repairTokenWear(
                 2, int(itemID), int(wearReduction)
@@ -218,8 +245,9 @@ class Henomorphs:
                         2, t
                     ).call()
                     data = list(data[1])
-                    if int(data[9]) >= int(threshold):
-                        self._RepairWear(t, reduction)
+                    if int(data[9]) >= int(threshold) and int(data[9]) > 0:
+                        self._RepairWear(t, min(reduction, int(data[9])))
+                        time.sleep(3)
                     else:
                         print("Skipped token " + str(t) + ", dont need repair wear")
                     attempt = 0
@@ -230,3 +258,30 @@ class Henomorphs:
                     attempt -= 1
                     if attempt > 0:
                         print("Retrying ...")
+                    time.sleep(3)
+
+    def _ClaimAll(self):
+        print("Claiming all rewards: ")
+        self.Transaction(self.contract_staking.functions.claimAllRewards())
+        print("Transacion successful")
+
+    def ClaimAll(self):
+        attempt = self.max_attempts
+        while attempt > 0:
+            try:
+                self._ClaimAll()
+                attempt = 0
+            except Exception as e:
+                print("Error: ")
+                print(e)
+                traceback.print_exc()
+                attempt -= 1
+                if attempt > 0:
+                    print("Retrying ...")
+                time.sleep(3)
+
+    def GetPendingRewards(self):
+        data = self.contract_staking.functions.calculateAccuratePendingRewards(
+            self.public_address, False
+        ).call()
+        return data[0] / 1000000000000000000

@@ -2,7 +2,7 @@ from lib.Henomorphs import Henomorphs
 import getpass
 
 if Henomorphs.IsKeySaved():
-    hen = Henomorphs(getpass.getpass('Password: '))
+    hen = Henomorphs(getpass.getpass("Password: "))
 else:
     Henomorphs.SaveKey(input("Enter private key: "), input("Enter password: "))
     exit()
@@ -13,8 +13,9 @@ while True:
     print("2) Inspect")
     print("3) Perform Action")
     print("4) Repair")
-    print("5) Exit")
-    match(input("Select function: ")):
+    print("5) Check rewards / claim")
+    print("6) Exit")
+    match (input("Select function: ")):
         case "1":
             hen.PrintInfo()
         case "2":
@@ -23,5 +24,9 @@ while True:
             hen.PerformColonyAction()
         case "4":
             hen.RepairWear(int(input("Threshold: ")), int(input("Wear reduction: ")))
+        case "5":
+            print("Pending rewards: " + str(hen.GetPendingRewards()))
+            if input("Claim? [y/n]: ") == "y":
+                hen.ClaimAll()
         case default:
             exit()
