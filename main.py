@@ -12,9 +12,10 @@ while True:
     print("1) Display info")
     print("2) Inspect")
     print("3) Perform Action")
-    print("4) Repair")
-    print("5) Check rewards / claim")
-    print("6) Exit")
+    print("4) Repair Wear")
+    print("5) Repair Charge")
+    print("6) Check rewards / claim")
+    print("7) Exit")
     match (input("Select function: ")):
         case "1":
             hen.PrintInfo()
@@ -23,8 +24,10 @@ while True:
         case "3":
             hen.PerformColonyAction()
         case "4":
-            hen.RepairWear(int(input("Threshold: ")), int(input("Wear reduction: ")))
+            hen.RepairWear(int(input("Threshold: ")), int(input("Max Wear reduction: ")))
         case "5":
+            hen.RepairCharge(int(input("Threshold: ")), int(input("Max charge to add: ")))
+        case "6":
             print("Pending rewards: " + str(hen.GetPendingRewards()))
             if input("Claim? [y/n]: ") == "y":
                 hen.ClaimAll()

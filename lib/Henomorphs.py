@@ -7,6 +7,8 @@ import traceback
 from lib.XorEncryption import XorEncryption
 import os
 import random
+import json
+import jsonschema
 
 
 class Henomorphs:
@@ -28,45 +30,63 @@ class Henomorphs:
         else:
             print("Connection Failed")
 
-        contract_address = "0xA899050674ABC1EC6F433373d55466342c27Db76"  # chargepod
-        contract_address2 = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"  # staking
-        contract_address3 = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"  # nft
+        contract_chargepod_address = (
+            "0xA899050674ABC1EC6F433373d55466342c27Db76"  # chargepod
+        )
+        contract_staking_address = (
+            "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"  # staking
+        )
+        contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"  # nft
 
         # Create smart contract instance
         with open("abi/abi_chargepod.json", "r") as file:
             self.contract_chargepod = self.web3.eth.contract(
-                address=contract_address, abi=file.read()
+                address=contract_chargepod_address, abi=file.read()
             )
 
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(
-                address=contract_address2, abi=file.read()
+                address=contract_staking_address, abi=file.read()
             )
 
         with open("abi/abi_nft.json", "r") as file:
             self.contract_nft = self.web3.eth.contract(
-                address=contract_address3, abi=file.read()
+                address=contract_nft_address, abi=file.read()
             )
+
+        tokens_schema = {
+            "type": "object",
+            "properties": {
+                "Henomorphs": {
+                    "type": "array",
+                    "uniqueItems": True,
+                    "minItems": 1,
+                    "items": {
+                        "required": ["CollectionID", "TokenID", "Action"],
+                        "properties": {
+                            "CollectionID": {
+                                "type": "number",
+                                "minimum": 2,
+                                "maximum": 3,
+                            },
+                            "TokenID": {"type": "number", "minimum": 2},
+                            "Action": {"type": "number", "minimum": 0, "maximum": 5},
+                        },
+                    },
+                }
+            },
+            "required": ["Henomorphs"],
+        }
+
+        with open("tokens.json", "r") as file:
+            self.tokens = json.load(file)
+            jsonschema.validate(instance=self.tokens, schema=tokens_schema)
+            self.tokens = self.tokens["Henomorphs"]
 
         with open("privkey.bin", "rb") as file:
             self.private_key = XorEncryption.Decrypt(file.read(), password)
             PA = self.web3.eth.account.from_key(self.private_key)
             self.public_address = PA.address
-
-        self.tokens = []
-        with open("tokens.txt", "r") as file:
-            nn = file.read().rstrip().split(",")  # using rstrip to remove the \n
-            for n in nn:
-                self.tokens.append(int(n))
-
-        self.tokensActions = []
-        with open("tokensActions.txt", "r") as file:
-            nn = file.read().rstrip().split(",")  # using rstrip to remove the \n
-            for n in nn:
-                self.tokensActions.append(int(n))
-
-        if len(self.tokens) != len(self.tokensActions):
-            raise Exception("mismatch number of tokens and tokens actions")
 
     @staticmethod
     def SaveKey(key, password):
@@ -104,54 +124,20 @@ class Henomorphs:
         if tx_receipt["status"] != 1:
             raise Exception("Transaction failed")
 
-    def _PerformColonyAction(self, itemID, actionID):
-        print("Performing action: " + str(itemID) + ", " + str(actionID))
-        self.Transaction(
-            self.contract_chargepod.functions.performAction(
-                2, int(itemID), int(actionID)
-            )
-        )
-        print("Transacion successful")
-
-    def PerformColonyAction(self):
-        i = 0
-        for t in self.tokens:
-            attempt = self.max_attempts
-            while attempt > 0:
-                try:
-                    if self.tokensActions[i] <= 0:
-                        print("Token without action, skipping")
-                        attempt = 0
-                        continue
-                    data = self.contract_chargepod.functions.checkBiopodCalibration(
-                        2, t
-                    ).call()
-                    data = list(data[1])
-                    if int(time.time()) - int(data[6]) > 60 * 60:
-                        action = self.tokensActions[i]
-                        if (
-                            self.max_attempts - attempt >= self.random_action_on_fail
-                            and self.random_action_on_fail > 0
-                        ):
-                            action = random.randint(1, 5)
-                        self._PerformColonyAction(t, action)
-                        time.sleep(3)
-                    else:
-                        print(
-                            "Skipped token "
-                            + str(t)
-                            + ", was performed action recently"
-                        )
-                    attempt = 0
-                except Exception as e:
-                    print("Error: ")
-                    print(e)
-                    traceback.print_exc()
-                    attempt -= 1
-                    if attempt > 0:
-                        print("Retrying ...")
-                    time.sleep(3)
-            i += 1
+    def TryAction(self, func, p):
+        attemptsLeft = self.max_attempts
+        while attemptsLeft > 0:
+            try:
+                func(attemptsLeft, p)
+                attemptsLeft = 0
+            except Exception as e:
+                print("Error: ")
+                print(e)
+                traceback.print_exc()
+                attemptsLeft -= 1
+                if attemptsLeft > 0:
+                    print("Retrying ...")
+                time.sleep(3)
 
     def PrintInfo(self):
         print("Getting data...")
@@ -175,9 +161,12 @@ class Henomorphs:
             "bioLevel",
         ]
         for t in self.tokens:
-            data = self.contract_chargepod.functions.checkBiopodCalibration(2, t).call()
+            data = self.contract_chargepod.functions.checkBiopodCalibration(
+                t["CollectionID"], t["TokenID"]
+            ).call()
             data = list(data[1])
             data.pop(1)
+            data[0] = f"({t["CollectionID"]}) {data[0]}"
             for i in [2, 5, 9]:
                 data[i] = datetime.fromtimestamp(int(data[i])).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -185,100 +174,123 @@ class Henomorphs:
             d.append(data)
         print(tabulate(d, headers=headers))
 
-    def _Inspect(self):
-        print("Performing core Inspection: ")
-        self.Transaction(self.contract_nft.functions.inspect(self.tokens))
-        print("Transacion successful")
-
     def Inspect(self):
-        attempt = self.max_attempts
-        while attempt > 0:
-            try:
-                tMin = time.time()
-                for t in self.tokens:
-                    data = self.contract_chargepod.functions.checkBiopodCalibration(
-                        2, t
-                    ).call()[1]
-                    t = int(time.time()) - int(data[10])
-                    if t < tMin:
-                        tMin = t
-                if tMin <= 12 * 60 * 60:
-                    tr = 12 * 60 * 60 - tMin
-                    print(
-                        "Cannot inspect. Next inspection possible in: "
-                        + str(int(tr / 60 / 60))
-                        + ":"
-                        + str(int((int(tr / 60)) - 60 * int(tr / 60 / 60)))
-                    )
-                else:
-                    self._Inspect()
-                attempt = 0
-            except Exception as e:
-                print("Error: ")
-                print(e)
-                traceback.print_exc()
-                attempt -= 1
-                if attempt > 0:
-                    print("Retrying ...")
-                time.sleep(3)
+        def _Inspect(_, p):
+            print("Performing core Inspection: ")
+            self.Transaction(self.contract_nft.functions.inspect(p[0], p[1]))
+            print("Transacion successful")
 
-    def _RepairWear(self, itemID, wearReduction):
-        print(
-            "Performing wear repair: "
-            + str(itemID)
-            + ", Reduction: "
-            + str(wearReduction)
-        )
-        self.Transaction(
-            self.contract_staking.functions.repairTokenWear(
-                2, int(itemID), int(wearReduction)
-            )
-        )
-        print("Transacion successful")
+        tokensToInspect = [[], []]
+        for token in self.tokens:
+            data = self.contract_chargepod.functions.checkBiopodCalibration(
+                token["CollectionID"], token["TokenID"]
+            ).call()[1]
+            t = int(time.time()) - int(data[10])
+            if t <= 12 * 60 * 60:
+                tr = 12 * 60 * 60 - t
+                print(
+                    f"Cannot inspect token ({token["CollectionID"]}, {token["TokenID"]}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                )
+            else:
+                tokensToInspect[0].append(token["CollectionID"])
+                tokensToInspect[1].append(token["TokenID"])
+
+        if len(tokensToInspect[0]) == 0:
+            print("No tokens availabe to inspect!")
+            return
+
+        self.TryAction(_Inspect, tokensToInspect)
+
+    def PerformColonyAction(self):
+        def _PerformColonyAction(attempt, t):
+            if t["Action"] <= 0:
+                print("Token without action, skipping")
+                return
+            data = self.contract_chargepod.functions.getLastTokenAction(
+                t["CollectionID"], t["TokenID"]
+            ).call()
+            if int(time.time()) - int(data[1]) > 2 * 60 * 60:
+                action = t["Action"]
+                if (
+                    self.max_attempts - attempt >= self.random_action_on_fail
+                    and self.random_action_on_fail > 0
+                ):
+                    action = random.randint(1, 5)
+
+                print(
+                    f"Performing action: ({t["CollectionID"]}, {t["TokenID"]}), {action}"
+                )
+                self.Transaction(
+                    self.contract_chargepod.functions.performAction(
+                        int(t["CollectionID"]), int(t["TokenID"]), int(action)
+                    )
+                )
+                print("Transacion successful")
+                time.sleep(5)
+            else:
+                print(f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), was performed action recently")
+
+        for t in self.tokens:
+            self.TryAction(_PerformColonyAction, t)
 
     def RepairWear(self, threshold, reduction):
-        for t in self.tokens:
-            attempt = self.max_attempts
-            while attempt > 0:
-                try:
-                    data = self.contract_chargepod.functions.checkBiopodCalibration(
-                        2, t
-                    ).call()
-                    data = list(data[1])
-                    if int(data[9]) >= int(threshold) and int(data[9]) > 0:
-                        self._RepairWear(t, min(reduction, int(data[9])))
-                        time.sleep(3)
-                    else:
-                        print("Skipped token " + str(t) + ", dont need repair wear")
-                    attempt = 0
-                except Exception as e:
-                    print("Error: ")
-                    print(e)
-                    traceback.print_exc()
-                    attempt -= 1
-                    if attempt > 0:
-                        print("Retrying ...")
-                    time.sleep(3)
+        def _RepairWear(_, t):
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
+            if int(data[2]) >= int(threshold) and int(data[2]) > 0:
+                r = min(reduction, int(data[2]))
+                print(
+                    f"Performing wear repair: ({t["CollectionID"]}, {t["TokenID"]}), Reduction: {r}"
+                )
+                self.Transaction(
+                    self.contract_staking.functions.repairTokenWear(
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                    )
+                )
+                print("Transacion successful")
+                time.sleep(3)
+            else:
+                print(
+                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair wear"
+                )
 
-    def _ClaimAll(self):
-        print("Claiming all rewards: ")
-        self.Transaction(self.contract_staking.functions.claimAllRewards())
-        print("Transacion successful")
+        for t in self.tokens:
+            self.TryAction(_RepairWear, t)
+
+    def RepairCharge(self, threshold, repair):
+        def _RepairCharge(_, t):
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
+            toRepair = int(data[1]) - int(data[0])
+            if toRepair >= int(threshold) and toRepair > 0:
+                r = min(repair, int(toRepair))
+                print(
+                    f"Performing charge repair: ({t["CollectionID"]}, {t["TokenID"]}), Repair: {r}"
+                )
+                self.Transaction(
+                    self.contract_chargepod.functions.repairCharge(
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                    )
+                )
+                print("Transacion successful")
+                time.sleep(3)
+            else:
+                print(
+                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair charge"
+                )
+
+        for t in self.tokens:
+            self.TryAction(_RepairCharge, t)
 
     def ClaimAll(self):
-        attempt = self.max_attempts
-        while attempt > 0:
-            try:
-                self._ClaimAll()
-                attempt = 0
-            except Exception as e:
-                print("Error: ")
-                print(e)
-                traceback.print_exc()
-                attempt -= 1
-                if attempt > 0:
-                    print("Retrying ...")
-                time.sleep(3)
+        def _ClaimAll(*_):
+            print("Claiming all rewards: ")
+            self.Transaction(self.contract_staking.functions.claimAllRewards())
+            print("Transacion successful")
+
+        self.TryAction(_ClaimAll, None)
 
     def GetPendingRewards(self):
         data = self.contract_staking.functions.calculateAccuratePendingRewards(
