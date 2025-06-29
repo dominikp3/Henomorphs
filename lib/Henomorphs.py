@@ -92,10 +92,10 @@ class Henomorphs:
         with open("config.json", "r") as file:
             j = json.load(file)
             jsonschema.validate(instance=j, schema=config_schema)
-            self.config = j["Config"]
-            self.tokens = j["Henomorphs"]
+            self.config = j['Config']
+            self.tokens = j['Henomorphs']
         
-        if self.config["random_action_on_fail"] >= self.config["max_transaction_attempts"]:
+        if self.config['random_action_on_fail'] >= self.config['max_transaction_attempts']:
             raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
 
         with open("privkey.bin", "rb") as file:
@@ -136,11 +136,11 @@ class Henomorphs:
         # Wait for transaction receipt
         tx_receipt = self.web3.eth.wait_for_transaction_receipt(send_tx)
         print(tx_receipt)  # Optional
-        if tx_receipt["status"] != 1:
+        if tx_receipt['status'] != 1:
             raise Exception("Transaction failed")
 
     def TryAction(self, func, p):
-        attemptsLeft = self.config["max_transaction_attempts"]
+        attemptsLeft = self.config['max_transaction_attempts']
         while attemptsLeft > 0:
             try:
                 func(attemptsLeft, p)
@@ -152,7 +152,7 @@ class Henomorphs:
                 attemptsLeft -= 1
                 if attemptsLeft > 0:
                     print("Retrying ...")
-                time.sleep(self.config["delay"])
+                time.sleep(self.config['delay'])
 
     def PrintInfo(self):
         print("Getting data...")
@@ -177,11 +177,11 @@ class Henomorphs:
         ]
         for t in self.tokens:
             data = self.contract_chargepod.functions.checkBiopodCalibration(
-                t["CollectionID"], t["TokenID"]
+                t['CollectionID'], t['TokenID']
             ).call()
             data = list(data[1])
             data.pop(1)
-            data[0] = f"({t["CollectionID"]}) {data[0]}"
+            data[0] = f"({t['CollectionID']}) {data[0]}"
             for i in [2, 5, 9]:
                 data[i] = datetime.fromtimestamp(int(data[i])).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -198,17 +198,17 @@ class Henomorphs:
         tokensToInspect = [[], []]
         for token in self.tokens:
             data = self.contract_chargepod.functions.checkBiopodCalibration(
-                token["CollectionID"], token["TokenID"]
+                token['CollectionID'], token['TokenID']
             ).call()[1]
             t = int(time.time()) - int(data[10])
             if t <= 12 * 60 * 60:
                 tr = 12 * 60 * 60 - t
                 print(
-                    f"Cannot inspect token ({token["CollectionID"]}, {token["TokenID"]}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                    f"Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
                 )
             else:
-                tokensToInspect[0].append(token["CollectionID"])
-                tokensToInspect[1].append(token["TokenID"])
+                tokensToInspect[0].append(token['CollectionID'])
+                tokensToInspect[1].append(token['TokenID'])
 
         if len(tokensToInspect[0]) == 0:
             print("No tokens availabe to inspect!")
@@ -218,38 +218,38 @@ class Henomorphs:
 
     def PerformColonyAction(self):
         def _PerformColonyAction(attempt, t):
-            if t["Action"] <= 0:
+            if t['Action'] <= 0:
                 print("Token without action, skipping")
                 return
             data = self.contract_chargepod.functions.getLastTokenAction(
-                t["CollectionID"], t["TokenID"]
+                t['CollectionID'], t['TokenID']
             ).call()
             if int(time.time()) <= int(data[2]):
                 tr = int(data[2]) - int(time.time())
                 print(
-                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), token in cooldown preiod. Next action possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), token in cooldown preiod. Next action possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
                 )
             elif int(time.time()) - int(data[1]) <= 60 * 60:
                 print(
-                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), was performed action recently"
+                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), was performed action recently"
                 )
             else:
-                action = t["Action"]
+                action = t['Action']
                 if (
-                    self.config["max_transaction_attempts"] - attempt >= self.config["random_action_on_fail"]
-                    and self.config["random_action_on_fail"] > 0
+                    self.config['max_transaction_attempts'] - attempt >= self.config['random_action_on_fail']
+                    and self.config['random_action_on_fail'] > 0
                 ):
                     action = random.randint(1, 5)
                 print(
-                    f"Performing action: ({t["CollectionID"]}, {t["TokenID"]}), {action}"
+                    f"Performing action: ({t['CollectionID']}, {t['TokenID']}), {action}"
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.performAction(
-                        int(t["CollectionID"]), int(t["TokenID"]), int(action)
+                        int(t['CollectionID']), int(t['TokenID']), int(action)
                     )
                 )
                 print("Transacion successful")
-                time.sleep(self.config["delay"])
+                time.sleep(self.config['delay'])
 
         for t in self.tokens:
             self.TryAction(_PerformColonyAction, t)
@@ -257,23 +257,23 @@ class Henomorphs:
     def RepairWear(self, threshold, reduction):
         def _RepairWear(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
+                t['CollectionID'], t['TokenID']
             ).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
                 print(
-                    f"Performing wear repair: ({t["CollectionID"]}, {t["TokenID"]}), Reduction: {r}"
+                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}"
                 )
                 self.Transaction(
                     self.contract_staking.functions.repairTokenWear(
-                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                        int(t['CollectionID']), int(t['TokenID']), int(r)
                     )
                 )
                 print("Transacion successful")
-                time.sleep(self.config["delay"])
+                time.sleep(self.config['delay'])
             else:
                 print(
-                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair wear"
+                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear"
                 )
 
         for t in self.tokens:
@@ -282,24 +282,24 @@ class Henomorphs:
     def RepairCharge(self, threshold, repair):
         def _RepairCharge(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
+                t['CollectionID'], t['TokenID']
             ).call()
             toRepair = int(data[1]) - int(data[0])
             if toRepair >= int(threshold) and toRepair > 0:
                 r = min(repair, int(toRepair))
                 print(
-                    f"Performing charge repair: ({t["CollectionID"]}, {t["TokenID"]}), Repair: {r}"
+                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}"
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.repairCharge(
-                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                        int(t['CollectionID']), int(t['TokenID']), int(r)
                     )
                 )
                 print("Transacion successful")
-                time.sleep(self.config["delay"])
+                time.sleep(self.config['delay'])
             else:
                 print(
-                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair charge"
+                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge"
                 )
 
         for t in self.tokens:
