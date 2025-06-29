@@ -3,4 +3,4 @@ __pycache__
 tokensActions.txt
 tokens.txt
 privkey.bin
-tokens.json
+config.json

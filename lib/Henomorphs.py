@@ -14,8 +14,6 @@ import jsonschema
 class Henomorphs:
     # Initialize endpoint URL
     node_url = "https://polygon-rpc.com"
-    max_attempts = 5  # Attempt 5 times if transaction fails
-    random_action_on_fail = 2  # Randomize action after 2 fail attempts
 
     def __init__(self, password):
         # Create the node connection
@@ -54,9 +52,22 @@ class Henomorphs:
                 address=contract_nft_address, abi=file.read()
             )
 
-        tokens_schema = {
+        config_schema = {
             "type": "object",
             "properties": {
+                "Config": {
+                    "type": "object",
+                    "properties": {
+                        "max_transaction_attempts": {"type": "integer", "minimum": 1},
+                        "random_action_on_fail": {"type": "integer", "minimum": 0},
+                        "delay": {"type": "number", "minimum": 0},
+                    },
+                    "required": [
+                        "max_transaction_attempts",
+                        "random_action_on_fail",
+                        "delay",
+                    ],
+                },
                 "Henomorphs": {
                     "type": "array",
                     "uniqueItems": True,
@@ -65,23 +76,27 @@ class Henomorphs:
                         "required": ["CollectionID", "TokenID", "Action"],
                         "properties": {
                             "CollectionID": {
-                                "type": "number",
+                                "type": "integer",
                                 "minimum": 2,
                                 "maximum": 3,
                             },
-                            "TokenID": {"type": "number", "minimum": 2},
-                            "Action": {"type": "number", "minimum": 0, "maximum": 5},
+                            "TokenID": {"type": "integer", "minimum": 2},
+                            "Action": {"type": "integer", "minimum": 0, "maximum": 5},
                         },
                     },
-                }
+                },
             },
-            "required": ["Henomorphs"],
+            "required": ["Config", "Henomorphs"],
         }
 
-        with open("tokens.json", "r") as file:
-            self.tokens = json.load(file)
-            jsonschema.validate(instance=self.tokens, schema=tokens_schema)
-            self.tokens = self.tokens["Henomorphs"]
+        with open("config.json", "r") as file:
+            j = json.load(file)
+            jsonschema.validate(instance=j, schema=config_schema)
+            self.config = j["Config"]
+            self.tokens = j["Henomorphs"]
+        
+        if self.config["random_action_on_fail"] >= self.config["max_transaction_attempts"]:
+            raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
 
         with open("privkey.bin", "rb") as file:
             self.private_key = XorEncryption.Decrypt(file.read(), password)
@@ -125,7 +140,7 @@ class Henomorphs:
             raise Exception("Transaction failed")
 
     def TryAction(self, func, p):
-        attemptsLeft = self.max_attempts
+        attemptsLeft = self.config["max_transaction_attempts"]
         while attemptsLeft > 0:
             try:
                 func(attemptsLeft, p)
@@ -137,7 +152,7 @@ class Henomorphs:
                 attemptsLeft -= 1
                 if attemptsLeft > 0:
                     print("Retrying ...")
-                time.sleep(3)
+                time.sleep(self.config["delay"])
 
     def PrintInfo(self):
         print("Getting data...")
@@ -209,14 +224,22 @@ class Henomorphs:
             data = self.contract_chargepod.functions.getLastTokenAction(
                 t["CollectionID"], t["TokenID"]
             ).call()
-            if int(time.time()) - int(data[1]) > 2 * 60 * 60:
+            if int(time.time()) <= int(data[2]):
+                tr = int(data[2]) - int(time.time())
+                print(
+                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), token in cooldown preiod. Next action possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                )
+            elif int(time.time()) - int(data[1]) <= 60 * 60:
+                print(
+                    f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), was performed action recently"
+                )
+            else:
                 action = t["Action"]
                 if (
-                    self.max_attempts - attempt >= self.random_action_on_fail
-                    and self.random_action_on_fail > 0
+                    self.config["max_transaction_attempts"] - attempt >= self.config["random_action_on_fail"]
+                    and self.config["random_action_on_fail"] > 0
                 ):
                     action = random.randint(1, 5)
-
                 print(
                     f"Performing action: ({t["CollectionID"]}, {t["TokenID"]}), {action}"
                 )
@@ -226,9 +249,7 @@ class Henomorphs:
                     )
                 )
                 print("Transacion successful")
-                time.sleep(5)
-            else:
-                print(f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), was performed action recently")
+                time.sleep(self.config["delay"])
 
         for t in self.tokens:
             self.TryAction(_PerformColonyAction, t)
@@ -249,7 +270,7 @@ class Henomorphs:
                     )
                 )
                 print("Transacion successful")
-                time.sleep(3)
+                time.sleep(self.config["delay"])
             else:
                 print(
                     f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair wear"
@@ -275,7 +296,7 @@ class Henomorphs:
                     )
                 )
                 print("Transacion successful")
-                time.sleep(3)
+                time.sleep(self.config["delay"])
             else:
                 print(
                     f"Skipped token ({t["CollectionID"]}, {t["TokenID"]}), dont need repair charge"
