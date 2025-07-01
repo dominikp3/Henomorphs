@@ -1,7 +1,9 @@
 import hashlib
 
-class XorEncryption:
+class InvalidKeyException(Exception):
+    pass
 
+class XorEncryption:
     @staticmethod
     def _get_key(p):
         m=hashlib.sha512()
@@ -24,5 +26,5 @@ class XorEncryption:
         for i in range(len(d)):
             o.append(d[i] ^ k2[i % len(k2)])
         if o[:4] != b"TEST":
-            raise Exception("Invalid key")
+            raise InvalidKeyException()
         return o[4:].decode()

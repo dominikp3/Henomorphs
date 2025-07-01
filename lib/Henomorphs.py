@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import traceback
 from lib.XorEncryption import XorEncryption
+from lib.Colors import Colors
 import os
 import random
 import json
@@ -12,21 +13,9 @@ import jsonschema
 
 
 class Henomorphs:
-    # Initialize endpoint URL
-    node_url = "https://polygon-rpc.com"
-
     def __init__(self, password):
-        # Create the node connection
-        self.web3 = Web3(Web3.HTTPProvider(self.node_url))
+        self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-        # Verify if the connection is successful
-        if self.web3.is_connected():
-            print("-" * 50)
-            print("Connection Successful")
-            print("-" * 50)
-        else:
-            print("Connection Failed")
 
         contract_chargepod_address = (
             "0xA899050674ABC1EC6F433373d55466342c27Db76"  # chargepod
@@ -36,7 +25,6 @@ class Henomorphs:
         )
         contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"  # nft
 
-        # Create smart contract instance
         with open("abi/abi_chargepod.json", "r") as file:
             self.contract_chargepod = self.web3.eth.contract(
                 address=contract_chargepod_address, abi=file.read()
@@ -61,6 +49,8 @@ class Henomorphs:
                         "max_transaction_attempts": {"type": "integer", "minimum": 1},
                         "random_action_on_fail": {"type": "integer", "minimum": 0},
                         "delay": {"type": "number", "minimum": 0},
+                        "debug": {"type": "boolean"},
+                        "rpc": {"type": "string"}
                     },
                     "required": [
                         "max_transaction_attempts",
@@ -92,16 +82,33 @@ class Henomorphs:
         with open("config.json", "r") as file:
             j = json.load(file)
             jsonschema.validate(instance=j, schema=config_schema)
-            self.config = j['Config']
-            self.tokens = j['Henomorphs']
-        
-        if self.config['random_action_on_fail'] >= self.config['max_transaction_attempts']:
-            raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
+            self.config = j["Config"]
+            self.tokens = j["Henomorphs"]
+
+        if (
+            self.config["random_action_on_fail"]
+            >= self.config["max_transaction_attempts"]
+        ):
+            raise Exception(
+                "random_action_on_fail must be smaller than max_transaction_attempts"
+            )
+
+        self.debug_mode = self.config.get("debug", False)
+        self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
         with open("privkey.bin", "rb") as file:
             self.private_key = XorEncryption.Decrypt(file.read(), password)
             PA = self.web3.eth.account.from_key(self.private_key)
             self.public_address = PA.address
+
+        self.web3.provider = Web3.HTTPProvider(self.node_url)
+
+        if self.web3.is_connected():
+            print("-" * 50)
+            print(f"{Colors.OKBLUE}Connection Successful{Colors.ENDC}")
+            print("-" * 50)
+        else:
+            print(f"{Colors.FAIL}Connection Failed{Colors.ENDC}")
 
     @staticmethod
     def SaveKey(key, password):
@@ -135,24 +142,28 @@ class Henomorphs:
 
         # Wait for transaction receipt
         tx_receipt = self.web3.eth.wait_for_transaction_receipt(send_tx)
-        print(tx_receipt)  # Optional
-        if tx_receipt['status'] != 1:
+        if self.debug_mode:
+            print(tx_receipt)  # Optional
+        if tx_receipt["status"] != 1:
             raise Exception("Transaction failed")
 
     def TryAction(self, func, p):
-        attemptsLeft = self.config['max_transaction_attempts']
+        attemptsLeft = self.config["max_transaction_attempts"]
         while attemptsLeft > 0:
             try:
                 func(attemptsLeft, p)
                 attemptsLeft = 0
             except Exception as e:
-                print("Error: ")
-                print(e)
-                traceback.print_exc()
+                print(f"{Colors.FAIL}[Error]")
+                print(f"{e}{Colors.ENDC}")
+                if self.debug_mode:
+                    print(Colors.FAIL, end="")
+                    traceback.print_exc()
+                    print(Colors.ENDC)
                 attemptsLeft -= 1
                 if attemptsLeft > 0:
-                    print("Retrying ...")
-                time.sleep(self.config['delay'])
+                    print("Retrying...", end=" ", flush=True)
+                time.sleep(self.config["delay"])
 
     def PrintInfo(self):
         print("Getting data...")
@@ -177,7 +188,7 @@ class Henomorphs:
         ]
         for t in self.tokens:
             data = self.contract_chargepod.functions.checkBiopodCalibration(
-                t['CollectionID'], t['TokenID']
+                t["CollectionID"], t["TokenID"]
             ).call()
             data = list(data[1])
             data.pop(1)
@@ -187,69 +198,76 @@ class Henomorphs:
                     "%Y-%m-%d %H:%M:%S"
                 )
             d.append(data)
+            print("\U0001f425", end=" ", flush=True)
+        print()
         print(tabulate(d, headers=headers))
 
     def Inspect(self):
         def _Inspect(_, p):
-            print("Performing core Inspection: ")
+            print("Performing core Inspection: ", end=" ", flush=True)
             self.Transaction(self.contract_nft.functions.inspect(p[0], p[1]))
-            print("Transacion successful")
+            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
 
         tokensToInspect = [[], []]
+        print("Getting data...")
         for token in self.tokens:
             data = self.contract_chargepod.functions.checkBiopodCalibration(
-                token['CollectionID'], token['TokenID']
+                token["CollectionID"], token["TokenID"]
             ).call()[1]
+            print("\U0001f425", end=" ", flush=True)
             t = int(time.time()) - int(data[10])
             if t <= 12 * 60 * 60:
                 tr = 12 * 60 * 60 - t
                 print(
-                    f"Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                    f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}{Colors.ENDC}"
                 )
             else:
-                tokensToInspect[0].append(token['CollectionID'])
-                tokensToInspect[1].append(token['TokenID'])
+                tokensToInspect[0].append(token["CollectionID"])
+                tokensToInspect[1].append(token["TokenID"])
+        print()
 
         if len(tokensToInspect[0]) == 0:
-            print("No tokens availabe to inspect!")
+            print(f"{Colors.WARNING}No tokens availabe to inspect!{Colors.ENDC}")
             return
 
         self.TryAction(_Inspect, tokensToInspect)
 
     def PerformColonyAction(self):
         def _PerformColonyAction(attempt, t):
-            if t['Action'] <= 0:
-                print("Token without action, skipping")
+            if t["Action"] <= 0:
+                print(f"{Colors.WARNING}Token without action, skipping.{Colors.ENDC}")
                 return
             data = self.contract_chargepod.functions.getLastTokenAction(
-                t['CollectionID'], t['TokenID']
+                t["CollectionID"], t["TokenID"]
             ).call()
             if int(time.time()) <= int(data[2]):
                 tr = int(data[2]) - int(time.time())
                 print(
-                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), token in cooldown preiod. Next action possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}"
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), token in cooldown preiod. Next action possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}{Colors.ENDC}"
                 )
             elif int(time.time()) - int(data[1]) <= 60 * 60:
                 print(
-                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), was performed action recently"
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), was performed action recently.{Colors.ENDC}"
                 )
             else:
-                action = t['Action']
+                action = t["Action"]
                 if (
-                    self.config['max_transaction_attempts'] - attempt >= self.config['random_action_on_fail']
-                    and self.config['random_action_on_fail'] > 0
+                    self.config["max_transaction_attempts"] - attempt
+                    >= self.config["random_action_on_fail"]
+                    and self.config["random_action_on_fail"] > 0
                 ):
                     action = random.randint(1, 5)
                 print(
-                    f"Performing action: ({t['CollectionID']}, {t['TokenID']}), {action}"
+                    f"Performing action: ({t['CollectionID']}, {t['TokenID']}), {action}",
+                    end=' ', flush=True
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.performAction(
-                        int(t['CollectionID']), int(t['TokenID']), int(action)
+                        int(t["CollectionID"]), int(t["TokenID"]), int(action)
                     )
                 )
-                print("Transacion successful")
-                time.sleep(self.config['delay'])
+                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                time.sleep(self.config["delay"])
 
         for t in self.tokens:
             self.TryAction(_PerformColonyAction, t)
@@ -257,23 +275,24 @@ class Henomorphs:
     def RepairWear(self, threshold, reduction):
         def _RepairWear(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
-                t['CollectionID'], t['TokenID']
+                t["CollectionID"], t["TokenID"]
             ).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
                 print(
-                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}"
+                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}",
+                    end=' ', flush=True
                 )
                 self.Transaction(
                     self.contract_staking.functions.repairTokenWear(
-                        int(t['CollectionID']), int(t['TokenID']), int(r)
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
                     )
                 )
-                print("Transacion successful")
-                time.sleep(self.config['delay'])
+                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                time.sleep(self.config["delay"])
             else:
                 print(
-                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear"
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}"
                 )
 
         for t in self.tokens:
@@ -282,24 +301,25 @@ class Henomorphs:
     def RepairCharge(self, threshold, repair):
         def _RepairCharge(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
-                t['CollectionID'], t['TokenID']
+                t["CollectionID"], t["TokenID"]
             ).call()
             toRepair = int(data[1]) - int(data[0])
             if toRepair >= int(threshold) and toRepair > 0:
                 r = min(repair, int(toRepair))
                 print(
-                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}"
+                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}",
+                    end=' ', flush=True
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.repairCharge(
-                        int(t['CollectionID']), int(t['TokenID']), int(r)
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
                     )
                 )
-                print("Transacion successful")
-                time.sleep(self.config['delay'])
+                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                time.sleep(self.config["delay"])
             else:
                 print(
-                    f"Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge"
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}"
                 )
 
         for t in self.tokens:
@@ -307,9 +327,9 @@ class Henomorphs:
 
     def ClaimAll(self):
         def _ClaimAll(*_):
-            print("Claiming all rewards: ")
+            print("Claiming all rewards: ", end=' ', flush=True)
             self.Transaction(self.contract_staking.functions.claimAllRewards())
-            print("Transacion successful")
+            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
 
         self.TryAction(_ClaimAll, None)
 
