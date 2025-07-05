@@ -16,6 +16,8 @@ def except_hook(exctype, value, t):
 
 sys.excepthook = except_hook
 
+Colors.WindowsEnableColors()
+
 if Henomorphs.IsKeySaved():
     try:
         hen = Henomorphs(getpass.getpass("Password: "))

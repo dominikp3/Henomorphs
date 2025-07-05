@@ -50,7 +50,7 @@ class Henomorphs:
                         "random_action_on_fail": {"type": "integer", "minimum": 0},
                         "delay": {"type": "number", "minimum": 0},
                         "debug": {"type": "boolean"},
-                        "rpc": {"type": "string"}
+                        "rpc": {"type": "string"},
                     },
                     "required": [
                         "max_transaction_attempts",
@@ -120,17 +120,18 @@ class Henomorphs:
         return os.path.isfile("privkey.bin")
 
     def Transaction(self, function):
-        # initialize the chain id, we need it to build the transaction for replay protection
-        Chain_id = self.web3.eth.chain_id
-
         # Call the function
         call_function = function.build_transaction(
             {
-                "chainId": Chain_id,
+                "chainId": self.web3.eth.chain_id,
                 "from": self.public_address,
                 "nonce": self.web3.eth.get_transaction_count(self.public_address),
             }
         )
+
+        if self.debug_mode:
+            print("call_function:")
+            print(call_function)
 
         # Sign transaction
         signed_tx = self.web3.eth.account.sign_transaction(
@@ -259,7 +260,8 @@ class Henomorphs:
                     action = random.randint(1, 5)
                 print(
                     f"Performing action: ({t['CollectionID']}, {t['TokenID']}), {action}",
-                    end=' ', flush=True
+                    end=" ",
+                    flush=True,
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.performAction(
@@ -281,7 +283,8 @@ class Henomorphs:
                 r = min(reduction, int(data[2]))
                 print(
                     f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}",
-                    end=' ', flush=True
+                    end=" ",
+                    flush=True,
                 )
                 self.Transaction(
                     self.contract_staking.functions.repairTokenWear(
@@ -308,7 +311,8 @@ class Henomorphs:
                 r = min(repair, int(toRepair))
                 print(
                     f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}",
-                    end=' ', flush=True
+                    end=" ",
+                    flush=True,
                 )
                 self.Transaction(
                     self.contract_chargepod.functions.repairCharge(
@@ -327,7 +331,7 @@ class Henomorphs:
 
     def ClaimAll(self):
         def _ClaimAll(*_):
-            print("Claiming all rewards: ", end=' ', flush=True)
+            print("Claiming all rewards: ", end=" ", flush=True)
             self.Transaction(self.contract_staking.functions.claimAllRewards())
             print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
 
