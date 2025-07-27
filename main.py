@@ -5,6 +5,7 @@ import getpass
 import sys
 import traceback
 
+
 def except_hook(exctype, value, t):
     if exctype == KeyboardInterrupt:
         print(f"{Colors.HEADER}Good Bye{Colors.ENDC}")
@@ -13,6 +14,7 @@ def except_hook(exctype, value, t):
         traceback.print_exception(value)
         print(Colors.ENDC)
     exit()
+
 
 sys.excepthook = except_hook
 
@@ -45,13 +47,18 @@ while True:
         case "3":
             hen.PerformColonyAction()
         case "4":
-            hen.RepairWear(int(input("Threshold: ")), int(input("Max Wear reduction: ")))
+            hen.RepairWear(
+                int(input("Threshold: ")), int(input("Max Wear reduction: "))
+            )
         case "5":
-            hen.RepairCharge(int(input("Threshold: ")), int(input("Max charge to add: ")))
+            hen.RepairCharge(
+                int(input("Threshold: ")), int(input("Max charge to add: "))
+            )
         case "6":
-            print("Pending rewards: " + str(hen.GetPendingRewards()))
+            rewards = hen.GetPendingRewards()
+            print(f"Pending rewards: {rewards[0]}, tokens: {rewards[1]}")
             if input("Claim? [y/n]: ") == "y":
-                hen.ClaimAll()
+                hen.ClaimAll(rewards[1])
         case "7":
             exit()
         case "0":

@@ -10,6 +10,7 @@ import os
 import random
 import json
 import jsonschema
+import math
 
 
 class Henomorphs:
@@ -109,6 +110,7 @@ class Henomorphs:
             print("-" * 50)
         else:
             print(f"{Colors.FAIL}Connection Failed{Colors.ENDC}")
+            raise Exception("Connection Failed")
 
     @staticmethod
     def SaveKey(key, password):
@@ -148,12 +150,12 @@ class Henomorphs:
         if tx_receipt["status"] != 1:
             raise Exception("Transaction failed")
 
-    def TryAction(self, func, p):
+    def TryAction(self, func: callable, p) -> bool:
         attemptsLeft = self.config["max_transaction_attempts"]
         while attemptsLeft > 0:
             try:
                 func(attemptsLeft, p)
-                attemptsLeft = 0
+                attemptsLeft = -1
             except Exception as e:
                 print(f"{Colors.FAIL}[Error]")
                 print(f"{e}{Colors.ENDC}")
@@ -165,6 +167,7 @@ class Henomorphs:
                 if attemptsLeft > 0:
                     print("Retrying...", end=" ", flush=True)
                 time.sleep(self.config["delay"])
+        return attemptsLeft == -1
 
     def PrintInfo(self):
         print("Getting data...")
@@ -329,16 +332,30 @@ class Henomorphs:
         for t in self.tokens:
             self.TryAction(_RepairCharge, t)
 
-    def ClaimAll(self):
-        def _ClaimAll(*_):
-            print("Claiming all rewards: ", end=" ", flush=True)
-            self.Transaction(self.contract_staking.functions.claimAllRewards())
+    def ClaimAll(self, tokensCount):
+        def _ClaimAll(_, p):
+            print(f"Claiming rewards (Chunk {p[0]+1}/{p[1]}):", end=" ", flush=True)
+            self.Transaction(
+                self.contract_staking.functions.claimRewardsBatchWithProgress(
+                    p[0] * 30, 30
+                )
+            )
             print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
 
-        self.TryAction(_ClaimAll, None)
+        if tokensCount <= 0:
+            print(
+                f"{Colors.FAIL}You need at least 1 staked token to claim rewards{Colors.ENDC}"
+            )
+            return
 
-    def GetPendingRewards(self):
-        data = self.contract_staking.functions.calculateAccuratePendingRewards(
-            self.public_address, False
+        chunks = math.ceil(tokensCount / 30)
+        for i in range(math.ceil(tokensCount / 30)):
+            if not self.TryAction(_ClaimAll, (i, chunks)):
+                print(f"{Colors.FAIL}Claiming failed!{Colors.ENDC}")
+                return
+
+    def GetPendingRewards(self) -> tuple[float, int]:
+        data = self.contract_staking.functions.getTotalPendingRewardsForAddress(
+            self.public_address
         ).call()
-        return data[0] / 1000000000000000000
+        return (data[0] / 1000000000000000000, data[1])
