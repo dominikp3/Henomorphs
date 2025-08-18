@@ -1,20 +1,16 @@
-@echo off
-setlocal EnableDelayedExpansion
-cd /d "%~dp0"
+#!/bin/bash
+cd "$(dirname "$0")"
 echo Fetching latest version from git repository
 git pull
-IF %ERRORLEVEL% NEQ 0 (
-  echo Failed to pull
-  PAUSE
-  exit
-)
+if [ $? -ne 0 ]; then
+    echo Failed to pull
+    exit
+fi
 echo Installing or updating dependencies
-call .venv\Scripts\activate
+source .venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-IF %ERRORLEVEL% NEQ 0 (
+if [ $? -ne 0 ]; then
   echo Failed to install / update dependencies
-  PAUSE
   exit
-)
-PAUSE
+fi

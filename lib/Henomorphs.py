@@ -4,7 +4,7 @@ from tabulate import tabulate
 from datetime import datetime
 import time
 import traceback
-from lib.XorEncryption import XorEncryption
+from lib.Encryption import Encryption
 from lib.Colors import Colors
 import os
 import random
@@ -80,7 +80,7 @@ class Henomorphs:
             "required": ["Config", "Henomorphs"],
         }
 
-        with open("config.json", "r") as file:
+        with open("userdata/config.json", "r") as file:
             j = json.load(file)
             jsonschema.validate(instance=j, schema=config_schema)
             self.config = j["Config"]
@@ -97,8 +97,8 @@ class Henomorphs:
         self.debug_mode = self.config.get("debug", False)
         self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
-        with open("privkey.bin", "rb") as file:
-            self.private_key = XorEncryption.Decrypt(file.read(), password)
+        with open("userdata/privkey.bin", "rb") as file:
+            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
             PA = self.web3.eth.account.from_key(self.private_key)
             self.public_address = PA.address
 
@@ -114,12 +114,17 @@ class Henomorphs:
 
     @staticmethod
     def SaveKey(key, password):
-        with open("privkey.bin", "wb") as file:
-            file.write(XorEncryption.Encrypt(key, password))
+        try:
+            Web3().eth.account.from_key(key)
+        except:
+            print(f"{Colors.FAIL}This is not valid Ethereum private key!{Colors.ENDC}")
+            exit()
+        with open("userdata/privkey.bin", "wb") as file:
+            file.write(Encryption.encrypt(key.encode("utf-8"), password))
 
     @staticmethod
     def IsKeySaved():
-        return os.path.isfile("privkey.bin")
+        return os.path.isfile("userdata/privkey.bin")
 
     def Transaction(self, function):
         # Call the function

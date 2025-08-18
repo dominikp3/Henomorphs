@@ -1,9 +1,10 @@
 from lib.Henomorphs import Henomorphs
-from lib.XorEncryption import InvalidKeyException
+from lib.Encryption import InvalidPasswordError
 from lib.Colors import Colors
 import getpass
 import sys
 import traceback
+import os
 
 
 def except_hook(exctype, value, t):
@@ -17,17 +18,29 @@ def except_hook(exctype, value, t):
 
 
 sys.excepthook = except_hook
-
 Colors.WindowsEnableColors()
+if not os.path.exists("userdata"):
+    os.makedirs("userdata")
 
 if Henomorphs.IsKeySaved():
     try:
         hen = Henomorphs(getpass.getpass("Password: "))
-    except InvalidKeyException:
-        print(f"{Colors.FAIL}Invalid password{Colors.ENDC}")
+    except InvalidPasswordError:
+        print(f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}")
         exit()
 else:
+    print(
+        f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
+        + f"It looks like you use the script for first time. You need to import wallet (with Henomorphs tokens) and select a password.\n"
+        + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256bit encryption.\n"
+        + f"{Colors.WARNING}WARNING: DO NOT SHARE {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE. "
+        + f"For better security, use strong password and rememember Your password, instead of storing it in .txt file or paper card near your computer.{Colors.ENDC}\n"
+    )
     Henomorphs.SaveKey(input("Enter private key: "), input("Enter password: "))
+    print(
+        f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}\n"
+        + f"Please create configuration file (if You don't do it yet) and restart the script."
+    )
     exit()
 
 while True:
