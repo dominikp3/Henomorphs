@@ -33,8 +33,8 @@ else:
         f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
         + f"It looks like you use the script for first time. You need to import wallet (with Henomorphs tokens) and select a password.\n"
         + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256bit encryption.\n"
-        + f"{Colors.WARNING}WARNING: DO NOT SHARE {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE. "
-        + f"For better security, use strong password and rememember Your password, instead of storing it in .txt file or paper card near your computer.{Colors.ENDC}\n"
+        + f"{Colors.WARNING}WARNING: DO NOT SHARE YOUR PRIVATE KEY, {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE."
+        + f"For better security, use strong password.{Colors.ENDC}\n"
     )
     Henomorphs.SaveKey(input("Enter private key: "), input("Enter password: "))
     print(
@@ -44,7 +44,10 @@ else:
     exit()
 
 while True:
-    print(f"{Colors.HEADER}Henomorphs Python{Colors.ENDC}")
+    print(f"{Colors.HEADER}Henomorphs Python{Colors.ENDC}{Colors.OKCYAN}")
+    print(f"-" * 50)
+    print(f"$POL: {hen.GetPol()}\n$ZICO: {hen.GetZico()}")
+    print(f"-" * 50, end=f"\n{Colors.ENDC}")
     print("1) Display info")
     print("2) Inspect")
     print("3) Perform Action")

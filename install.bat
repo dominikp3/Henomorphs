@@ -19,7 +19,7 @@ IF %ERRORLEVEL% NEQ 0 (
   exit
 )
 echo Executing update script
-call update.bat
+call update.bat --skip-pull
 exit
 :nopy
 echo Python not found. Ensure You have python and pip correctly installed and added to PATH

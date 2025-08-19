@@ -1,12 +1,14 @@
 @echo off
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
-echo Fetching latest version from git repository
-git pull
-IF %ERRORLEVEL% NEQ 0 (
-  echo Failed to pull
-  PAUSE
-  exit
+IF "%1" NEQ "--skip-pull" (
+  echo Fetching latest version from git repository
+  git pull
+  IF !ERRORLEVEL! NEQ 0 (
+    echo Failed to pull
+    PAUSE
+    exit
+  )
 )
 echo Installing or updating dependencies
 call .venv\Scripts\activate
