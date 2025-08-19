@@ -16,7 +16,7 @@ class HenoInspect(HenoBase):
             data = self.contract_chargepod.functions.checkBiopodCalibration(
                 token["CollectionID"], token["TokenID"]
             ).call()[1]
-            print("\U0001f425", end=" ", flush=True)
+            print(f"{self.ChickChar}", end=" ", flush=True)
             t = int(time.time()) - int(data[10])
             if t <= 12 * 60 * 60:
                 tr = 12 * 60 * 60 - t

@@ -40,3 +40,25 @@ class HenoZico(HenoBase):
             self.contract_zico.functions.balanceOf(self.public_address).call()
             / 1000000000000000000
         )
+
+    def GetZicoApproval(self, spender) -> float:
+        return (
+            self.contract_zico.functions.allowance(self.public_address, spender).call()
+            / 1000000000000000000
+        )
+
+    def ApproveZico(self, spender, value):
+        def _ApproveZico(*_):
+            print(f"Approving ZICO ({spender}, {value}):", end=" ", flush=True)
+            self.Transaction(
+                self.contract_zico.functions.approve(
+                    spender, value * 1000000000000000000
+                )
+            )
+            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+
+        if value < 0:
+            print(f"{Colors.FAIL}Value must be greater than zero{Colors.ENDC}")
+            return
+
+        self.TryAction(_ApproveZico, None)

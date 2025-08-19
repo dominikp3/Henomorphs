@@ -10,33 +10,35 @@ import jsonschema
 
 
 class HenoBase:
+    ChickChar = "\U0001f425"
+
     def __init__(self, password):
         self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
-        contract_chargepod_address = "0xA899050674ABC1EC6F433373d55466342c27Db76"
-        contract_staking_address = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"
-        contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
-        contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
+        self.contract_chargepod_address = "0xA899050674ABC1EC6F433373d55466342c27Db76"
+        self.contract_staking_address = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"
+        self.contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
+        self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
 
         with open("abi/abi_chargepod.json", "r") as file:
             self.contract_chargepod = self.web3.eth.contract(
-                address=contract_chargepod_address, abi=file.read()
+                address=self.contract_chargepod_address, abi=file.read()
             )
 
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(
-                address=contract_staking_address, abi=file.read()
+                address=self.contract_staking_address, abi=file.read()
             )
 
         with open("abi/abi_nft.json", "r") as file:
             self.contract_nft = self.web3.eth.contract(
-                address=contract_nft_address, abi=file.read()
+                address=self.contract_nft_address, abi=file.read()
             )
 
         with open("abi/abi_zico.json", "r") as file:
             self.contract_zico = self.web3.eth.contract(
-                address=contract_zico_address, abi=file.read()
+                address=self.contract_zico_address, abi=file.read()
             )
 
         config_schema = {

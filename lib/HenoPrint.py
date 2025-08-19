@@ -37,6 +37,6 @@ class HenoPrint(HenoBase):
                     "%Y-%m-%d %H:%M:%S"
                 )
             d.append(data)
-            print("\U0001f425", end=" ", flush=True)
+            print(f"{self.ChickChar}", end=" ", flush=True)
         print()
         print(tabulate(d, headers=headers))
