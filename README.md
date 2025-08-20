@@ -3,7 +3,7 @@
 Nieoficjalny skrypt w pythonie do interakcji ze smart kontraktami kolekcji NFT Henomorphs wydanej przez społeczność ZICO DAO.\
 [Kolekcja Henomorphs Genesis na Magic Eden](https://magiceden.io/collections/polygon/henomorphs-genesis-1)  
 [Kolekcja Henomorphs Matrix na Magic Eden](https://magiceden.io/collections/polygon/henomorphs-matrix)  
-[Discord CryptoColony 42](https://discord.gg/YWpAGBwhqa)
+[Discord CryptoColony 42](https://discord.gg/E8aGBKDp7W)
 
 Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 
