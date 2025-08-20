@@ -40,6 +40,10 @@ class HenoAutoGenConfig:
             if r is not None:
                 r["Action"] = d["Action"]
 
+        hen.json["Henomorphs"] = sorted(
+            hen.json["Henomorphs"], key=lambda h: (h["CollectionID"], h["TokenID"])
+        )
+
         with open("userdata/config.json", "w") as file:
             file.write(json.dumps(hen.json, indent=2))
 
