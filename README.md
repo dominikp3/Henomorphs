@@ -70,7 +70,7 @@ Należy utworzyć plik tekstowy ```userdata/config.json``` \
 W pliku umieścić dane tokenów. Można użyć innej [nieoficjalnej nakładki](https://henomorphs.xyz/) w celu sprawdzenia swoich NFT \
 Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć linki do darmowych serwerów rpc
 ### Opis formatu (z komentarzami)
-```json
+```js
 {
   "Config": { // Parametry konfiguracji
     "max_transaction_attempts": (integer), 
