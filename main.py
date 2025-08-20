@@ -1,3 +1,21 @@
+# Henomorphs Python. Unofficial interface for interacting with Henomorphs NFT collection
+# Copyright (C) 2025  Dominik Piestrzyński
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
 from lib.Encryption import InvalidPasswordError
 from lib.Colors import Colors
@@ -20,6 +38,13 @@ def except_hook(exctype, value, _):
 def main():
     sys.excepthook = except_hook
     Colors.WindowsEnableColors()
+    print(
+        f"{Colors.OKBLUE}Henomorphs Python  Copyright (C) 2025  Dominik Piestrzyński\n"
+        + f"This program comes with ABSOLUTELY NO WARRANTY;\n"
+        + f"This is free software, and you are welcome to redistribute it\n"
+        + f"under certain conditions; See LICENSE.md file for details\n{Colors.ENDC}"
+    )
+
     if not os.path.exists("userdata"):
         os.makedirs("userdata")
 
@@ -36,14 +61,17 @@ def main():
             f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
             + f"It looks like you use the script for first time. You need to import wallet (with Henomorphs tokens) and select a password.\n"
             + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256bit encryption.\n"
-            + f"{Colors.WARNING}WARNING: DO NOT SHARE YOUR PRIVATE KEY, {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE."
+            + f"{Colors.WARNING}WARNING: DO NOT SHARE YOUR PRIVATE KEY, {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE.\n"
             + f"For better security, use strong password.{Colors.ENDC}\n"
         )
-        Henomorphs.SaveKey(input("Enter private key: "), input("Enter password: "))
-        print(
-            f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}\n"
-            + f"Please create configuration file (if You don't do it yet) and restart the script."
-        )
+        prvkey = input("Enter private key: ")
+        password = input("Enter password: ")
+        Henomorphs.SaveKey(prvkey, password)
+        print(f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}")
+        if os.path.isfile("userdata/config.json"):
+            print(f"{Colors.OKGREEN}Please restart script{Colors.ENDC}")
+        else:
+            Henomorphs(password, configGenOnly=True)
         exit()
 
     while True:
@@ -59,6 +87,7 @@ def main():
         print("5) Repair Charge")
         print("6) Check rewards / claim")
         print("7) Check ZICO approval")
+        print("42) Auto update config.json (add / remove tokens)")
         print("0) Exit")
         match (input("Select function: ")):
             case "1":
@@ -69,11 +98,11 @@ def main():
                 PerformAction(hen)
             case "4":
                 hen.RepairWear(
-                    int(input("Threshold: ")), int(input("Max Wear reduction: "))
+                    int(input("Threshold (wear greater or equal): ")), int(input("Max Wear reduction: "))
                 )
             case "5":
                 hen.RepairCharge(
-                    int(input("Threshold: ")), int(input("Max charge to add: "))
+                    int(input("Threshold (missing charge greater or equal): ")), int(input("Max charge to add: "))
                 )
             case "6":
                 rewards = hen.GetPendingRewards()
@@ -82,6 +111,13 @@ def main():
                     hen.ClaimAll(rewards[1])
             case "7":
                 ApproveZico(hen)
+            case "42":
+                print(
+                    f"{Colors.WARNING}WARNING: This function gets staked tokens from blockchain and add/remove tokens to your config.json file\n{Colors.ENDC}"
+                    + f"{Colors.WARNING}Is highly recommended to backup your current config.json file before use.{Colors.ENDC}"
+                )
+                if input("Are you sure? [y/n]: ") == "y":
+                    HenoAutoGenConfig.genConfig(hen)
             case "0":
                 exit()
 

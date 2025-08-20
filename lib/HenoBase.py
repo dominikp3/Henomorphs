@@ -7,12 +7,13 @@ from lib.Encryption import Encryption
 import os
 import json
 import jsonschema
+from lib.HenoAutoGenConfig import HenoAutoGenConfig
 
 
 class HenoBase:
     ChickChar = "\U0001f425"
 
-    def __init__(self, password):
+    def __init__(self, password, configGenOnly=False):
         self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
@@ -20,26 +21,27 @@ class HenoBase:
         self.contract_staking_address = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"
         self.contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
-
-        with open("abi/abi_chargepod.json", "r") as file:
-            self.contract_chargepod = self.web3.eth.contract(
-                address=self.contract_chargepod_address, abi=file.read()
-            )
-
+        
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(
                 address=self.contract_staking_address, abi=file.read()
             )
 
-        with open("abi/abi_nft.json", "r") as file:
-            self.contract_nft = self.web3.eth.contract(
-                address=self.contract_nft_address, abi=file.read()
-            )
+        if not configGenOnly:
+            with open("abi/abi_chargepod.json", "r") as file:
+                self.contract_chargepod = self.web3.eth.contract(
+                    address=self.contract_chargepod_address, abi=file.read()
+                )
 
-        with open("abi/abi_zico.json", "r") as file:
-            self.contract_zico = self.web3.eth.contract(
-                address=self.contract_zico_address, abi=file.read()
-            )
+            with open("abi/abi_nft.json", "r") as file:
+                self.contract_nft = self.web3.eth.contract(
+                    address=self.contract_nft_address, abi=file.read()
+                )
+
+            with open("abi/abi_zico.json", "r") as file:
+                self.contract_zico = self.web3.eth.contract(
+                    address=self.contract_zico_address, abi=file.read()
+                )
 
         config_schema = {
             "type": "object",
@@ -80,11 +82,25 @@ class HenoBase:
             "required": ["Config", "Henomorphs"],
         }
 
+        with open("userdata/privkey.bin", "rb") as file:
+            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
+            PA = self.web3.eth.account.from_key(self.private_key)
+            self.public_address = PA.address
+
+        default_rpc = "https://polygon-rpc.com"
+
+        if configGenOnly or not os.path.isfile("userdata/config.json"):
+            print(f"{Colors.WARNING}No config.json file found! Trying to generate one...{Colors.ENDC}")
+            self.web3.provider = Web3.HTTPProvider(default_rpc)
+            self.json = {}
+            HenoAutoGenConfig.genConfig(self)
+            exit()
+
         with open("userdata/config.json", "r") as file:
-            j = json.load(file)
-            jsonschema.validate(instance=j, schema=config_schema)
-            self.config = j["Config"]
-            self.tokens = j["Henomorphs"]
+            self.json = json.load(file)
+            jsonschema.validate(instance=self.json, schema=config_schema)
+            self.config = self.json["Config"]
+            self.tokens = self.json["Henomorphs"]
 
         if (
             self.config["random_action_on_fail"]
@@ -95,12 +111,7 @@ class HenoBase:
             )
 
         self.debug_mode = self.config.get("debug", False)
-        self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
-
-        with open("userdata/privkey.bin", "rb") as file:
-            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
-            PA = self.web3.eth.account.from_key(self.private_key)
-            self.public_address = PA.address
+        self.node_url = self.config.get("rpc", default_rpc)
 
         self.web3.provider = Web3.HTTPProvider(self.node_url)
 

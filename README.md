@@ -1,8 +1,9 @@
-# Henomorphs
+ # Henomorphs
 
-Nieoficjalny skrypt w pythonie do interakcji ze smart kontraktami kolekcji NFT Henomorphs wydanej przez społeczność Polskiego Kryptoznaczka.\
-[Kolekcja na Magic Eden](https://magiceden.io/collections/polygon/0x35096745368071ac13a9bca0d7aaef35a0a71856)  
-[Discord Polskiego Kryptoznaczka](https://discord.gg/YWpAGBwhqa)
+Nieoficjalny skrypt w pythonie do interakcji ze smart kontraktami kolekcji NFT Henomorphs wydanej przez społeczność ZICO DAO.\
+[Kolekcja Henomorphs Genesis na Magic Eden](https://magiceden.io/collections/polygon/henomorphs-genesis-1)  
+[Kolekcja Henomorphs Matrix na Magic Eden](https://magiceden.io/collections/polygon/henomorphs-matrix)  
+[Discord CryptoColony 42](https://discord.gg/YWpAGBwhqa)
 
 Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 
@@ -16,6 +17,8 @@ Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 
 
 ## Instalacja:
+Upewnij się, że masz zainstalowany: [git](https://git-scm.com/) i [python](https://www.python.org/)
+
 Sklonuj repozytorium:
 ```sh
 git clone https://github.com/dominikp3/Henomorphs.git
@@ -67,7 +70,7 @@ Należy utworzyć plik tekstowy ```userdata/config.json``` \
 W pliku umieścić dane tokenów. Można użyć innej [nieoficjalnej nakładki](https://henomorphs.xyz/) w celu sprawdzenia swoich NFT \
 Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć linki do darmowych serwerów rpc
 ### Opis formatu (z komentarzami)
-```
+```json
 {
   "Config": { // Parametry konfiguracji
     "max_transaction_attempts": (integer), 
@@ -103,25 +106,76 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
 ```
 
 ## Przykładowa konfiguracja
-**Uwaga: w pliku z konfiguracją nie należy umieszczać komentarzy (//)**
-```
+**Uwaga: w pliku z konfiguracją nie należy umieszczać komentarzy (//)**  
+**Jeśli kopiujesz ten przykład, nie zapomnij zmienić przykładowych ID tokenów na swoje**
+```json
 {
   "Config": {
     "max_transaction_attempts": 5,
-    "random_action_on_fail": 1,
+    "random_action_on_fail": 2,
     "delay": 3,
     "rpc": "https://polygon-pokt.nodies.app"
   },
   "Henomorphs": [
     {
       "CollectionID": 2,
-      "TokenID": 421,
+      "TokenID": 1853,
+      "Action": 4
+    },
+    {
+      "CollectionID": 2,
+      "TokenID": 1887,
+      "Action": 5
+    },
+    {
+      "CollectionID": 2,
+      "TokenID": 364,
+      "Action": 1
+    },
+    {
+      "CollectionID": 2,
+      "TokenID": 873,
+      "Action": 4
+    },
+    {
+      "CollectionID": 2,
+      "TokenID": 1632,
+      "Action": 5
+    },
+    {
+      "CollectionID": 2,
+      "TokenID": 322,
       "Action": 2
     },
     {
       "CollectionID": 3,
-      "TokenID": 890,
-      "Action": 1
+      "TokenID": 1702,
+      "Action": 5
+    },
+    {
+      "CollectionID": 3,
+      "TokenID": 1612,
+      "Action": 3
+    },
+    {
+      "CollectionID": 3,
+      "TokenID": 1510,
+      "Action": 2
+    },
+    {
+      "CollectionID": 3,
+      "TokenID": 1492,
+      "Action": 4
+    },
+    {
+      "CollectionID": 3,
+      "TokenID": 1641,
+      "Action": 2
+    },
+    {
+      "CollectionID": 3,
+      "TokenID": 696,
+      "Action": 5
     }
   ]
 }
@@ -144,5 +198,5 @@ python main.py
 ## Użytkowanie
 **Ta sekcja instrukcji zakłada, że masz już skrypt skonfigurowany i gotowy do użycia**
 
-Po uruchomieniu należy wprowadzić kasło do odszyfrowania portfela.\
+Po uruchomieniu należy wprowadzić hasło do odszyfrowania portfela.\
 Do nawigacji należy używać przycisków z cyframi i klawisza Enter
