@@ -23,6 +23,10 @@ class HenoInspect(HenoBase):
                 print(
                     f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}{Colors.ENDC}"
                 )
+            elif int(data[2]) >= 100:
+                print(
+                    f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Kinship: {data[2]}{Colors.ENDC}"
+                )
             else:
                 tokensToInspect[0].append(token["CollectionID"])
                 tokensToInspect[1].append(token["TokenID"])

@@ -92,7 +92,7 @@ class HenoRepair(HenoBase):
 
         self.TryAction(_batch_repair, None)
 
-    def RepairCharge(self):
+    def RepairChargeSequence(self):
         (threshold, repair) = self._get_repair_params(
             self.config.get("repair_charge", {})
         )
@@ -123,3 +123,56 @@ class HenoRepair(HenoBase):
 
         for t in self.tokens:
             self.TryAction(_RepairCharge, t)
+
+    ### Na dzień dzisiejszy (21.08.2025) NIE DZIAŁA
+    def RepairChargeBatch(self):
+        (threshold, repair) = self._get_repair_params(
+            self.config.get("repair_charge", {})
+        )
+
+        repairData = {"collectionIds": [], "tokenIds": [], "operations": []}
+
+        def _prepare_data(t):
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
+            toRepair = int(data[1]) - int(data[0])
+            if toRepair >= int(threshold) and toRepair > 0:
+                r = min(repair, int(toRepair))
+                print(
+                    f"Charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}"
+                )
+                repairData["collectionIds"].append(t["CollectionID"])
+                repairData["tokenIds"].append(t["TokenID"])
+                repairData["operations"].append(
+                    {
+                        "chargePoints": r,
+                        "wearReduction": 0,
+                        "emergencyMode": False,
+                        "skipValidation": False,
+                    }
+                )
+            else:
+                print(
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}"
+                )
+
+        def _batch_repair(*_):
+            self.Transaction(
+                self.contract_chargepod.functions.batchRepair(
+                    repairData["collectionIds"],
+                    repairData["tokenIds"],
+                    repairData["operations"],
+                )
+            )
+            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+            time.sleep(self.config["delay"])
+
+        for t in self.tokens:
+            _prepare_data(t)
+
+        if len(repairData["tokenIds"]) == 0:
+            print(f"{Colors.WARNING}No tokens availabe to repair!{Colors.ENDC}")
+            return
+
+        self.TryAction(_batch_repair, None)

@@ -99,7 +99,7 @@ def main():
             case "4":
                 RepairWear(hen)
             case "5":
-                hen.RepairCharge()
+                hen.RepairChargeSequence()
             case "6":
                 rewards = hen.GetPendingRewards()
                 print(f"Pending rewards: {rewards[0]}, tokens: {rewards[1]}")
