@@ -14,6 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# GRATULACJĘ! Znalazłeś wierszyk konkursowy:
+# Dziennik spisany na kartach marzeń,
+# Nędza ukryta w cieniu zdarzeń.
+# Kucyk przebiega przez łąkę w słońcu,
+# Dostęp otwiera furtkę ku końcu.
+
+# Wzgórze się wspina ku niebu blisko,
+# Sprzeciw mówi: „to wcale nie wszystko”.
+# Duma się świeci jak kogut w stodole,
+# Para tańczy razem w polu na dole.
+
+# Wspinaczka wyżej, nie spadaj w dół,
+# Zakup kusi: „kup, bo masz szansę znów”.
+# Chrupki poranek, gdy świt się rozchyla,
+# Stal twarda jak prawda, co w słowach się skrywa.
 
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
