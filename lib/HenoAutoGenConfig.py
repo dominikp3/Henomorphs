@@ -11,8 +11,6 @@ class HenoAutoGenConfig:
             hen.json["Henomorphs"] = []
         if "max_transaction_attempts" not in hen.json["Config"]:
             hen.json["Config"]["max_transaction_attempts"] = 5
-        if "random_action_on_fail" not in hen.json["Config"]:
-            hen.json["Config"]["random_action_on_fail"] = 2
         if "delay" not in hen.json["Config"]:
             hen.json["Config"]["delay"] = 3
 

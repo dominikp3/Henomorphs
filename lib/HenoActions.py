@@ -27,9 +27,9 @@ class HenoActions(HenoBase):
             else:
                 action = t["Action"]
                 if (
-                    self.config["max_transaction_attempts"] - attempt
-                    >= self.config["random_action_on_fail"]
-                    and self.config["random_action_on_fail"] > 0
+                    self.max_transaction_attempts - attempt
+                    >= self.random_action_on_fail
+                    and self.random_action_on_fail > 0
                 ):
                     action = random.randint(1, 5)
                 print(
@@ -98,6 +98,10 @@ class HenoActions(HenoBase):
         print("Preparing chicks ...")
         for t in self.tokens:
             _prepare_data(t)
+
+        if len(tokens) == 0:
+            print(f"{Colors.WARNING}No tokens availabe to perform action!{Colors.ENDC}")
+            return
 
         print("\nHeno Groups:")
         _print_data()

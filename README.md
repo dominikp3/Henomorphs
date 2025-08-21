@@ -66,15 +66,20 @@ Jeśli katalog ```userdata``` nie istnieje, zostanie on utworzony automatycznie.
 
 Przy pierwszym uruchomieniu skryptu należy zaimportować portfel Polygon wprowadzając klucz prywatny, następnie ustawić hasło. Klucz zostanie zapisany w pliku ```userdata/privkey.bin``` w postaci zaszyfrowanej algorytmem AES z 256 bitowym kluczem utworzonym na podstawie wybranego hasła.
 
-Należy utworzyć plik tekstowy ```userdata/config.json``` \
-W pliku umieścić dane tokenów. Można użyć innej [nieoficjalnej nakładki](https://henomorphs.xyz/) w celu sprawdzenia swoich NFT \
+~~Należy utworzyć plik tekstowy ```userdata/config.json```~~ \
+~~W pliku umieścić dane tokenów. Można użyć innej [nieoficjalnej nakładki](https://henomorphs.xyz/) w celu sprawdzenia swoich NFT~~
+
+W aktualnej wersji skrypt automatycznie pobierze listę zastakowanych NFT i utworzy plik ```userdata/config.json```, jeśli nie istnieje. Wciąż konieczne jest samodzielne ustawienie niektórych parametrów według własnych preferencji (np: akcje dla tokena)
+
 Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć linki do darmowych serwerów rpc
-### Opis formatu (z komentarzami)
+
+### Opis formatu - wszystkie dostępne parametry
 ```js
 {
   "Config": { // Parametry konfiguracji
     "max_transaction_attempts": (integer), 
     // Maksymalna ilość prób wykonania transakcji (powtarzanie w przypadku niepowodzenia)
+    // PARAMETR WYMAGANY
 
     "random_action_on_fail": (integer),
     // użycie losowej akcji w przypadku niepowodzenia z wybraną akcją (0 - wyłączone, liczba określa po ilu nieudanych próbach stosowana jest losowa). Ta opcja może się przydać, jeśli chcesz mieć większą pweność, że każdy kurczak wykona jakąś akcję. Jak jedna nie działa, to inna.
@@ -82,12 +87,42 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
 
     "delay": (number),
     // Opóźnienie przed wykonaniem kolejnej transakcji w sekundach (służy do zminimalizowania ryzyka wystąpienia błędów, jeśli wykonujemy za dużo transakcji naraz)
+    // PARAMETR WYMAGANY
 
     "debug": (boolean),
-    // Po ustawieniu na true wyświetla więcej informacji (niekoniecznie przydatne dla zwykłych użytkowników). Parametr opcjonalny
+    // Po ustawieniu na true wyświetla więcej informacji (niekoniecznie przydatne dla zwykłych użytkowników).
+
+    "dummy": (int),
+    // Parametr testowy - tylko do testowania
+    // 0 - Normalne działanie (wartość domyślna)
+    // 1 - Transakcja zawsze przechodzi pomyślnie
+    // 2 - Zawsze błąd
 
     "rpc": (string)
-    // Niestandardowy Link do rpc sieci Polygon. Parametr opcjonalny
+    // Niestandardowy Link do rpc sieci Polygon.
+
+    "repair_wear": { // Konfiguracja naprawy wear
+      "threshold": (integer),
+      // naprawia tylko kurczaki o wear >= threshold
+      // Jeśli -1 (lub brak tego parametru) skrypt pyta przy każdej naprawie
+      // Jeśli 0, to naprawi każdego kurczaka
+
+      "max_repair": (integer)
+      // Maksymalna wartość naprawy
+      // Można ustawić na jakąś dużą wartość, np 99 aby całkowicie naprawić kurczaka
+    },
+    "repair_charge": { // Konfiguracja naprawy charge, działa tak jak z wear
+      "threshold": (integer), // (Brakujący Charge) >= threshold
+      "max_repair": (integer) // Max naprawa
+    },
+    "algorithms": {
+      // Wybór algorytmów
+      // ask - pytaj przy każdym użyciu
+      // sequence - sekwencyjnie, po koleji pojedyńczo
+      // batch - wiele naraz, oszczędza gas fee
+      "actions": (string),
+      "repair_wear": (string)
+    }
   },
   "Henomorphs": [ // Lista tokenów
     {

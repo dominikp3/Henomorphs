@@ -97,13 +97,9 @@ def main():
             case "3":
                 PerformAction(hen)
             case "4":
-                hen.RepairWear(
-                    int(input("Threshold (wear greater or equal): ")), int(input("Max Wear reduction: "))
-                )
+                RepairWear(hen)
             case "5":
-                hen.RepairCharge(
-                    int(input("Threshold (missing charge greater or equal): ")), int(input("Max charge to add: "))
-                )
+                hen.RepairCharge()
             case "6":
                 rewards = hen.GetPendingRewards()
                 print(f"Pending rewards: {rewards[0]}, tokens: {rewards[1]}")
@@ -123,6 +119,22 @@ def main():
 
 
 def PerformAction(hen):
+    def _match(x):
+        match (x):
+            case "1":
+                hen.PerformColonyActionSequence()
+                return True
+            case "2":
+                hen.PerformColonyActionBatch()
+                return True
+            case "0":
+                return True
+        return False
+
+    if (a := hen.GetConfigAlgorithm("actions")) > 0:
+        _match(str(a))
+        return
+
     while True:
         print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
         print(f"{Colors.OKCYAN}1) SingleChickSequence")
@@ -140,15 +152,38 @@ def PerformAction(hen):
             + f"{Colors.OKBLUE}[{hen.ChickChar}, {hen.ChickChar}, {hen.ChickChar}, ...], ...{Colors.ENDC}"
         )
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
-        match (input("Select function: ")):
+        if _match(input("Select function: ")):
+            return
+
+
+def RepairWear(hen):
+    def _match(x):
+        match (x):
             case "1":
-                hen.PerformColonyActionSequence()
-                return
+                hen.RepairWearSequence()
+                return True
             case "2":
-                hen.PerformColonyActionBatch()
-                return
+                hen.RepairWearBatch()
+                return True
             case "0":
-                return
+                return True
+        return False
+
+    if (a := hen.GetConfigAlgorithm("repair_wear")) > 0:
+        _match(str(a))
+        return
+
+    while True:
+        print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
+        print(
+            f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}"
+        )
+        print(
+            f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}"
+        )
+        print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
+        if _match(input("Select function: ")):
+            return
 
 
 def ApproveZico(hen):
@@ -182,8 +217,7 @@ def checkApproval(hen):
         or hen.GetZicoApproval(hen.contract_staking_address) <= 50
     ):
         print(
-            f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.",
-            end="",
+            f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors."
         )
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 

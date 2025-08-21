@@ -8,6 +8,7 @@ import os
 import json
 import jsonschema
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
+from lib.ConfigSchema import config_schema
 
 
 class HenoBase:
@@ -21,7 +22,7 @@ class HenoBase:
         self.contract_staking_address = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"
         self.contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
-        
+
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(
                 address=self.contract_staking_address, abi=file.read()
@@ -43,45 +44,6 @@ class HenoBase:
                     address=self.contract_zico_address, abi=file.read()
                 )
 
-        config_schema = {
-            "type": "object",
-            "properties": {
-                "Config": {
-                    "type": "object",
-                    "properties": {
-                        "max_transaction_attempts": {"type": "integer", "minimum": 1},
-                        "random_action_on_fail": {"type": "integer", "minimum": 0},
-                        "delay": {"type": "number", "minimum": 0},
-                        "debug": {"type": "boolean"},
-                        "rpc": {"type": "string"},
-                    },
-                    "required": [
-                        "max_transaction_attempts",
-                        "random_action_on_fail",
-                        "delay",
-                    ],
-                },
-                "Henomorphs": {
-                    "type": "array",
-                    "uniqueItems": True,
-                    "minItems": 1,
-                    "items": {
-                        "required": ["CollectionID", "TokenID", "Action"],
-                        "properties": {
-                            "CollectionID": {
-                                "type": "integer",
-                                "minimum": 2,
-                                "maximum": 3,
-                            },
-                            "TokenID": {"type": "integer", "minimum": 2},
-                            "Action": {"type": "integer", "minimum": 0, "maximum": 5},
-                        },
-                    },
-                },
-            },
-            "required": ["Config", "Henomorphs"],
-        }
-
         with open("userdata/privkey.bin", "rb") as file:
             self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
             PA = self.web3.eth.account.from_key(self.private_key)
@@ -90,7 +52,9 @@ class HenoBase:
         default_rpc = "https://polygon-rpc.com"
 
         if configGenOnly or not os.path.isfile("userdata/config.json"):
-            print(f"{Colors.WARNING}No config.json file found! Trying to generate one...{Colors.ENDC}")
+            print(
+                f"{Colors.WARNING}No config.json file found! Trying to generate one...{Colors.ENDC}"
+            )
             self.web3.provider = Web3.HTTPProvider(default_rpc)
             self.json = {}
             HenoAutoGenConfig.genConfig(self)
@@ -102,10 +66,10 @@ class HenoBase:
             self.config = self.json["Config"]
             self.tokens = self.json["Henomorphs"]
 
-        if (
-            self.config["random_action_on_fail"]
-            >= self.config["max_transaction_attempts"]
-        ):
+        self.random_action_on_fail = self.config.get("random_action_on_fail", 0)
+        self.max_transaction_attempts = self.config.get("max_transaction_attempts", 1)
+
+        if self.random_action_on_fail >= self.max_transaction_attempts:
             raise Exception(
                 "random_action_on_fail must be smaller than max_transaction_attempts"
             )
@@ -153,6 +117,12 @@ class HenoBase:
             print("call_function:")
             print(call_function)
 
+        if (d := self.config.get("dummy", 0)) > 0:
+            if d == 1:
+                return
+            else:
+                raise Exception("Transaction failed")
+
         # Sign transaction
         signed_tx = self.web3.eth.account.sign_transaction(
             call_function, private_key=self.private_key
@@ -169,7 +139,7 @@ class HenoBase:
             raise Exception("Transaction failed")
 
     def TryAction(self, func: callable, p) -> bool:
-        attemptsLeft = self.config["max_transaction_attempts"]
+        attemptsLeft = self.max_transaction_attempts
         while attemptsLeft > 0:
             try:
                 func(attemptsLeft, p)
@@ -186,3 +156,13 @@ class HenoBase:
                     print("Retrying...", end=" ", flush=True)
                 time.sleep(self.config["delay"])
         return attemptsLeft == -1
+
+    # 0 - ask, 1 - sequence, 2 - batch
+    def GetConfigAlgorithm(self, n: str) -> int:
+        match self.config.get("algorithms", {}).get(n, "ask"):
+            case "sequence":
+                return 1
+            case "batch":
+                return 2
+            case _:
+                return 0
