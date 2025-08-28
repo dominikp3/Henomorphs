@@ -14,21 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# GRATULACJĘ! Znalazłeś wierszyk konkursowy:
-# Dziennik spisany na kartach marzeń,
-# Nędza ukryta w cieniu zdarzeń.
-# Kucyk przebiega przez łąkę w słońcu,
-# Dostęp otwiera furtkę ku końcu.
-
-# Wzgórze się wspina ku niebu blisko,
-# Sprzeciw mówi: „to wcale nie wszystko”.
-# Duma się świeci jak kogut w stodole,
-# Para tańczy razem w polu na dole.
-
-# Wspinaczka wyżej, nie spadaj w dół,
-# Zakup kusi: „kup, bo masz szansę znów”.
-# Chrupki poranek, gdy świt się rozchyla,
-# Stal twarda jak prawda, co w słowach się skrywa.
 
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
@@ -38,6 +23,7 @@ import getpass
 import sys
 import traceback
 import os
+from lib.ConfigSelector import GetConfig
 
 
 def except_hook(exctype, value, _):
@@ -63,9 +49,11 @@ def main():
     if not os.path.exists("userdata"):
         os.makedirs("userdata")
 
-    if Henomorphs.IsKeySaved():
+    (account, hConf) = GetConfig()
+
+    if Henomorphs.IsKeySaved(account):
         try:
-            hen = Henomorphs(getpass.getpass("Password: "))
+            hen = Henomorphs(account, getpass.getpass("Password: "), hConf)
         except InvalidPasswordError:
             print(
                 f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}"
@@ -75,18 +63,18 @@ def main():
         print(
             f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
             + f"It looks like you use the script for first time. You need to import wallet (with Henomorphs tokens) and select a password.\n"
-            + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256bit encryption.\n"
+            + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256 bit encryption.\n"
             + f"{Colors.WARNING}WARNING: DO NOT SHARE YOUR PRIVATE KEY, {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE.\n"
             + f"For better security, use strong password.{Colors.ENDC}\n"
         )
         prvkey = input("Enter private key: ")
         password = input("Enter password: ")
-        Henomorphs.SaveKey(prvkey, password)
+        Henomorphs.SaveKey(account, prvkey, password)
         print(f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}")
         if os.path.isfile("userdata/config.json"):
             print(f"{Colors.OKGREEN}Please restart script{Colors.ENDC}")
         else:
-            Henomorphs(password, configGenOnly=True)
+            Henomorphs(account, getpass.getpass("Password: "), hConf, True)
         exit()
 
     last_pol, last_zico = 0, 0

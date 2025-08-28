@@ -43,7 +43,7 @@ class HenoActions(HenoBase):
                     )
                 )
                 print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-                time.sleep(self.config["delay"])
+                self.delay()
 
         for t in self.tokens:
             self.TryAction(_PerformColonyAction, t)
@@ -93,7 +93,7 @@ class HenoActions(HenoBase):
                 )
             )
             print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-            time.sleep(self.config["delay"])
+            self.delay()
 
         print("Preparing chicks ...")
         for t in self.tokens:

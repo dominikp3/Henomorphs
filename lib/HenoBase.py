@@ -8,13 +8,13 @@ import os
 import json
 import jsonschema
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
-from lib.ConfigSchema import config_schema
+from lib.ConfigSchema import config_schema, heno_config_schema
 
 
 class HenoBase:
     ChickChar = "\U0001f425"
 
-    def __init__(self, password, configGenOnly=False):
+    def __init__(self, account, password, henoConfFile, configGenOnly=False):
         self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
@@ -44,38 +44,27 @@ class HenoBase:
                     address=self.contract_zico_address, abi=file.read()
                 )
 
-        with open("userdata/privkey.bin", "rb") as file:
-            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
-            PA = self.web3.eth.account.from_key(self.private_key)
-            self.public_address = PA.address
-
-        default_rpc = "https://polygon-rpc.com"
-
-        if configGenOnly or not os.path.isfile("userdata/config.json"):
+        if os.path.isfile("userdata/config.json"):
+            with open("userdata/config.json", "r") as file:
+                self.config = json.load(file)
+                jsonschema.validate(instance=self.config, schema=config_schema)
+                # self.config = self.json["Config"]
+                # self.tokens = self.json["Henomorphs"]
+        else:
             print(
-                f"{Colors.WARNING}No config.json file found! Trying to generate one...{Colors.ENDC}"
+                f"{Colors.WARNING}No config.json file found! Using default config.{Colors.ENDC}"
             )
-            self.web3.provider = Web3.HTTPProvider(default_rpc)
-            self.json = {}
-            HenoAutoGenConfig.genConfig(self)
-            exit()
+            self.config = {}
 
-        with open("userdata/config.json", "r") as file:
-            self.json = json.load(file)
-            jsonschema.validate(instance=self.json, schema=config_schema)
-            self.config = self.json["Config"]
-            self.tokens = self.json["Henomorphs"]
-
+        self.max_transaction_attempts = self.config.get("max_transaction_attempts", 5)
         self.random_action_on_fail = self.config.get("random_action_on_fail", 0)
-        self.max_transaction_attempts = self.config.get("max_transaction_attempts", 1)
-
+        self.delay_t = self.config.get("delay", 3)
         if self.random_action_on_fail >= self.max_transaction_attempts:
             raise Exception(
                 "random_action_on_fail must be smaller than max_transaction_attempts"
             )
-
         self.debug_mode = self.config.get("debug", False)
-        self.node_url = self.config.get("rpc", default_rpc)
+        self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
         self.web3.provider = Web3.HTTPProvider(self.node_url)
 
@@ -89,19 +78,37 @@ class HenoBase:
             print("-" * 50)
             raise Exception("Connection Failed")
 
+        with open(f"userdata/{account}privkey.bin", "rb") as file:
+            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
+            PA = self.web3.eth.account.from_key(self.private_key)
+            self.public_address = PA.address
+
+        self.henoConfPath = f"userdata/{account}{henoConfFile}"
+        if configGenOnly or not os.path.isfile(self.henoConfPath):
+            print(
+                f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}"
+            )
+            self.tokens = []
+            HenoAutoGenConfig.genConfig(self)
+            exit()
+
+        with open(self.henoConfPath, "r") as file:
+            self.tokens = json.load(file)
+            jsonschema.validate(instance=self.tokens, schema=heno_config_schema)
+
     @staticmethod
-    def SaveKey(key, password):
+    def SaveKey(account, key, password):
         try:
             Web3().eth.account.from_key(key)
         except:
             print(f"{Colors.FAIL}This is not valid Ethereum private key!{Colors.ENDC}")
             exit()
-        with open("userdata/privkey.bin", "wb") as file:
+        with open(f"userdata/{account}privkey.bin", "wb") as file:
             file.write(Encryption.encrypt(key.encode("utf-8"), password))
 
     @staticmethod
-    def IsKeySaved():
-        return os.path.isfile("userdata/privkey.bin")
+    def IsKeySaved(account):
+        return os.path.isfile(f"userdata/{account}privkey.bin")
 
     def Transaction(self, function):
         # Call the function
@@ -154,8 +161,11 @@ class HenoBase:
                 attemptsLeft -= 1
                 if attemptsLeft > 0:
                     print("Retrying...", end=" ", flush=True)
-                time.sleep(self.config["delay"])
+                self.delay()
         return attemptsLeft == -1
+
+    def delay(self):
+        time.sleep(self.delay_t)
 
     # 0 - ask, 1 - sequence, 2 - batch
     def GetConfigAlgorithm(self, n: str) -> int:

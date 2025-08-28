@@ -5,23 +5,15 @@ from lib.Colors import Colors
 class HenoAutoGenConfig:
     @staticmethod
     def genConfig(hen):
-        if "Config" not in hen.json:
-            hen.json["Config"] = {}
-        if "Henomorphs" not in hen.json:
-            hen.json["Henomorphs"] = []
-        if "max_transaction_attempts" not in hen.json["Config"]:
-            hen.json["Config"]["max_transaction_attempts"] = 5
-        if "delay" not in hen.json["Config"]:
-            hen.json["Config"]["delay"] = 3
-
-        henCopy = hen.json["Henomorphs"]
-        hen.json["Henomorphs"] = []
+        henCopy = hen.tokens
+        hen.tokens = []
 
         data = hen.contract_staking.functions.getDetailedStakedTokensByAddress(
             hen.public_address
         ).call()
+
         for d in data:
-            hen.json["Henomorphs"].append(
+            hen.tokens.append(
                 {"CollectionID": int(d[1]), "TokenID": int(d[2]), "Action": 0}
             )
 
@@ -42,10 +34,10 @@ class HenoAutoGenConfig:
             hen.json["Henomorphs"], key=lambda h: (h["CollectionID"], h["TokenID"])
         )
 
-        with open("userdata/config.json", "w") as file:
+        with open(hen.henoConfPath, "w") as file:
             file.write(json.dumps(hen.json, indent=2))
 
         print(
-            f"{Colors.OKGREEN}Generated config.json\nPlease review the file and fill missing data (eg. actions){Colors.ENDC}"
+            f"{Colors.OKGREEN}Generated {hen.henoConfPath}\nPlease review the file and fill missing data (eg. actions){Colors.ENDC}"
         )
         exit()

@@ -5,7 +5,8 @@ from lib.HenoBase import HenoBase
 
 class HenoRepair(HenoBase):
     # returns threahold and max repair amount
-    def _get_repair_params(self, conf: dict) -> tuple[int, int]:
+    def _get_repair_params(self, confn: str) -> tuple[int, int]:
+        conf = self.config.get(confn, {})
         threshold = conf.get("threshold", -1)
         max_repair = conf.get("max_repair", -1)
         if threshold < 0:
@@ -15,9 +16,7 @@ class HenoRepair(HenoBase):
         return (threshold, max_repair)
 
     def RepairWearSequence(self):
-        (threshold, reduction) = self._get_repair_params(
-            self.config.get("repair_wear", {})
-        )
+        (threshold, reduction) = self._get_repair_params("repair_wear")
 
         def _RepairWear(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
@@ -36,7 +35,7 @@ class HenoRepair(HenoBase):
                     )
                 )
                 print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-                time.sleep(self.config["delay"])
+                self.delay()
             else:
                 print(
                     f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}"
@@ -46,9 +45,7 @@ class HenoRepair(HenoBase):
             self.TryAction(_RepairWear, t)
 
     def RepairWearBatch(self):
-        (threshold, reduction) = self._get_repair_params(
-            self.config.get("repair_wear", {})
-        )
+        (threshold, reduction) = self._get_repair_params("repair_wear")
 
         repairData = {
             "collectionIds": [],
@@ -93,9 +90,7 @@ class HenoRepair(HenoBase):
         self.TryAction(_batch_repair, None)
 
     def RepairChargeSequence(self):
-        (threshold, repair) = self._get_repair_params(
-            self.config.get("repair_charge", {})
-        )
+        (threshold, repair) = self._get_repair_params("repair_charge")
 
         def _RepairCharge(_, t):
             data = self.contract_chargepod.functions.getRepairStatus(
@@ -115,7 +110,7 @@ class HenoRepair(HenoBase):
                     )
                 )
                 print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-                time.sleep(self.config["delay"])
+                self.delay()
             else:
                 print(
                     f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}"
@@ -126,9 +121,7 @@ class HenoRepair(HenoBase):
 
     ### Na dzień dzisiejszy (21.08.2025) NIE DZIAŁA
     def RepairChargeBatch(self):
-        (threshold, repair) = self._get_repair_params(
-            self.config.get("repair_charge", {})
-        )
+        (threshold, repair) = self._get_repair_params("repair_charge")
 
         repairData = {"collectionIds": [], "tokenIds": [], "operations": []}
 
@@ -166,7 +159,7 @@ class HenoRepair(HenoBase):
                 )
             )
             print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-            time.sleep(self.config["delay"])
+            self.delay()
 
         for t in self.tokens:
             _prepare_data(t)
