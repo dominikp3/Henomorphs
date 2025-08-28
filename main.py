@@ -98,6 +98,7 @@ def main():
         print("5) Repair Charge")
         print("6) Check rewards / claim")
         print("7) Check ZICO approval")
+        print("8) Change specializations")
         print("42) Auto update config.json (add / remove tokens)")
         print("0) Exit")
         match (input("Select function: ")):
@@ -118,6 +119,8 @@ def main():
                     hen.ClaimAll(rewards[1])
             case "7":
                 ApproveZico(hen)
+            case "8":
+                hen.ChangeSpecializations()
             case "42":
                 print(
                     f"{Colors.WARNING}WARNING: This function gets staked tokens from blockchain and add/remove tokens to your config.json file\n{Colors.ENDC}"

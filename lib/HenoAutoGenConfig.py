@@ -14,14 +14,19 @@ class HenoAutoGenConfig:
 
         for d in data:
             hen.tokens.append(
-                {"CollectionID": int(d[1]), "TokenID": int(d[2]), "Action": 0}
+                {
+                    "CollectionID": int(d[1]),
+                    "TokenID": int(d[2]),
+                    "Action": 0,
+                    "Spec": hen.GetSpec2(d[1], d[2]),
+                }
             )
 
         for d in henCopy:
             r = next(
                 (
                     obj
-                    for obj in hen.json["Henomorphs"]
+                    for obj in hen.tokens
                     if obj["CollectionID"] == d["CollectionID"]
                     and obj["TokenID"] == d["TokenID"]
                 ),
@@ -29,13 +34,13 @@ class HenoAutoGenConfig:
             )
             if r is not None:
                 r["Action"] = d["Action"]
+                # if d.get("Spec", -1) > -1:
+                #     r["Spec"] = d["Spec"]
 
-        hen.json["Henomorphs"] = sorted(
-            hen.json["Henomorphs"], key=lambda h: (h["CollectionID"], h["TokenID"])
-        )
+        hen.tokens = sorted(hen.tokens, key=lambda h: (h["CollectionID"], h["TokenID"]))
 
         with open(hen.henoConfPath, "w") as file:
-            file.write(json.dumps(hen.json, indent=2))
+            file.write(json.dumps(hen.tokens, indent=2))
 
         print(
             f"{Colors.OKGREEN}Generated {hen.henoConfPath}\nPlease review the file and fill missing data (eg. actions){Colors.ENDC}"

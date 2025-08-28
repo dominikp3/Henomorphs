@@ -153,12 +153,13 @@ class HenoBase:
                 attemptsLeft = -1
             except Exception as e:
                 print(f"{Colors.FAIL}[Error]")
-                print(f"{e}{Colors.ENDC}")
+                print(f"{type(e).__name__}: {e}")
                 if self.debug_mode:
                     print(Colors.FAIL, end="")
                     traceback.print_exc()
                     print(Colors.ENDC)
                 attemptsLeft -= 1
+                print(f"{Colors.ENDC}", end="")
                 if attemptsLeft > 0:
                     print("Retrying...", end=" ", flush=True)
                 self.delay()

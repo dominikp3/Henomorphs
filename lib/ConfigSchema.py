@@ -44,7 +44,8 @@ heno_config_schema = {
         "properties": {
             "CollectionID": {"type": "integer", "minimum": 2, "maximum": 3},
             "TokenID": {"type": "integer", "minimum": 2},
-            "Action": {"type": "integer", "minimum": 0, "maximum": 5},
+            "Action": {"type": "integer", "minimum": 0, "maximum": 8},
+            "Spec": {"type": "integer", "minimum": -1, "maximum": 2}
         },
     },
 }
