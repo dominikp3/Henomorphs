@@ -9,6 +9,7 @@ import json
 import jsonschema
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.ConfigSchema import config_schema, heno_config_schema
+from lib.FileLogger import FileLogger
 
 
 class HenoBase:
@@ -24,49 +25,41 @@ class HenoBase:
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
 
         with open("abi/abi_stake.json", "r") as file:
-            self.contract_staking = self.web3.eth.contract(
-                address=self.contract_staking_address, abi=file.read()
-            )
+            self.contract_staking = self.web3.eth.contract(address=self.contract_staking_address, abi=file.read())
 
         if not configGenOnly:
             with open("abi/abi_chargepod.json", "r") as file:
-                self.contract_chargepod = self.web3.eth.contract(
-                    address=self.contract_chargepod_address, abi=file.read()
-                )
+                self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
 
             with open("abi/abi_nft.json", "r") as file:
-                self.contract_nft = self.web3.eth.contract(
-                    address=self.contract_nft_address, abi=file.read()
-                )
+                self.contract_nft = self.web3.eth.contract(address=self.contract_nft_address, abi=file.read())
 
             with open("abi/abi_zico.json", "r") as file:
-                self.contract_zico = self.web3.eth.contract(
-                    address=self.contract_zico_address, abi=file.read()
-                )
+                self.contract_zico = self.web3.eth.contract(address=self.contract_zico_address, abi=file.read())
 
         if os.path.isfile("userdata/config.json"):
             with open("userdata/config.json", "r") as file:
                 self.config = json.load(file)
                 jsonschema.validate(instance=self.config, schema=config_schema)
-                # self.config = self.json["Config"]
-                # self.tokens = self.json["Henomorphs"]
         else:
-            print(
-                f"{Colors.WARNING}No config.json file found! Using default config.{Colors.ENDC}"
-            )
+            print(f"{Colors.WARNING}No config.json file found! Using default config.{Colors.ENDC}")
             self.config = {}
 
         self.max_transaction_attempts = self.config.get("max_transaction_attempts", 5)
         self.random_action_on_fail = self.config.get("random_action_on_fail", 0)
         self.delay_t = self.config.get("delay", 3)
         if self.random_action_on_fail >= self.max_transaction_attempts:
-            raise Exception(
-                "random_action_on_fail must be smaller than max_transaction_attempts"
-            )
+            raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
         self.debug_mode = self.config.get("debug", False)
+        self.logger = FileLogger(f"userdata/{account}logs/", self.config.get("log", False))
         self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
         self.web3.provider = Web3.HTTPProvider(self.node_url)
+
+        with open(f"userdata/{account}privkey.bin", "rb") as file:
+            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
+            PA = self.web3.eth.account.from_key(self.private_key)
+            self.public_address = PA.address
 
         if self.web3.is_connected():
             print("-" * 50)
@@ -74,20 +67,17 @@ class HenoBase:
             print("-" * 50)
         else:
             print("-" * 50)
-            print(f"{Colors.FAIL}Connection Failed{Colors.ENDC}")
+            print(f"{Colors.FAIL}Connection Failed\n Ensure that rpc ({self.node_url}) works or use different one.{Colors.ENDC}")
             print("-" * 50)
             raise Exception("Connection Failed")
 
-        with open(f"userdata/{account}privkey.bin", "rb") as file:
-            self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
-            PA = self.web3.eth.account.from_key(self.private_key)
-            self.public_address = PA.address
+        self.logger.log("-" * 100)
+        self.logger.log(f"Successfully logged in: {self.public_address}, using config: {henoConfFile}")
 
         self.henoConfPath = f"userdata/{account}{henoConfFile}"
         if configGenOnly or not os.path.isfile(self.henoConfPath):
-            print(
-                f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}"
-            )
+            print(f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}")
+            self.logger.log(f"No {henoConfFile} file found! Trying to generate one...")
             self.tokens = []
             HenoAutoGenConfig.genConfig(self)
             exit()
@@ -131,9 +121,7 @@ class HenoBase:
                 raise Exception("Transaction failed")
 
         # Sign transaction
-        signed_tx = self.web3.eth.account.sign_transaction(
-            call_function, private_key=self.private_key
-        )
+        signed_tx = self.web3.eth.account.sign_transaction(call_function, private_key=self.private_key)
 
         # Send transaction
         send_tx = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
@@ -154,6 +142,7 @@ class HenoBase:
             except Exception as e:
                 print(f"{Colors.FAIL}[Error]")
                 print(f"{type(e).__name__}: {e}")
+                self.logger.log(f"Transaction failed: {type(e).__name__}: {e}")
                 if self.debug_mode:
                     print(Colors.FAIL, end="")
                     traceback.print_exc()
@@ -177,3 +166,7 @@ class HenoBase:
                 return 2
             case _:
                 return 0
+
+    def printSuccessMessage(self):
+        print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+        self.logger.log("Transaction successfull")

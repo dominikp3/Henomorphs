@@ -45,4 +45,5 @@ class HenoAutoGenConfig:
         print(
             f"{Colors.OKGREEN}Generated {hen.henoConfPath}\nPlease review the file and fill missing data (eg. actions){Colors.ENDC}"
         )
+        hen.logger.log(f"Generated config file: {hen.henoConfPath}")
         exit()

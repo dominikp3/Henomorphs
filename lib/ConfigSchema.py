@@ -21,6 +21,7 @@ config_schema = {
         "debug": {"type": "boolean"},
         "dummy": {"type": "integer", "minimum": 0, "maximum": 2},
         "rpc": {"type": "string"},
+        "log": {"type": "boolean"},
         "repair_wear": {"$ref": "#/definitions/repair"},
         "repair_charge": {"$ref": "#/definitions/repair"},
         "algorithms": {
@@ -32,7 +33,6 @@ config_schema = {
             "additionalProperties": False,
         },
     },
-    "required": ["max_transaction_attempts", "delay"],
     "additionalProperties": False,
 }
 
@@ -45,7 +45,7 @@ heno_config_schema = {
             "CollectionID": {"type": "integer", "minimum": 2, "maximum": 3},
             "TokenID": {"type": "integer", "minimum": 2},
             "Action": {"type": "integer", "minimum": 0, "maximum": 8},
-            "Spec": {"type": "integer", "minimum": -1, "maximum": 2}
+            "Spec": {"type": "integer", "minimum": -1, "maximum": 2},
         },
     },
 }

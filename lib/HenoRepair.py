@@ -16,35 +16,26 @@ class HenoRepair(HenoBase):
         return (threshold, max_repair)
 
     def RepairWearSequence(self):
+        self.logger.log("Starting wear repair (Sequence)")
         (threshold, reduction) = self._get_repair_params("repair_wear")
 
         def _RepairWear(_, t):
-            data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
-            ).call()
+            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
-                print(
-                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}",
-                    end=" ",
-                    flush=True,
-                )
-                self.Transaction(
-                    self.contract_staking.functions.repairTokenWear(
-                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
-                    )
-                )
-                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                print(f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}", end=" ", flush=True)
+                self.logger.log(f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}")
+                self.Transaction(self.contract_staking.functions.repairTokenWear(int(t["CollectionID"]), int(t["TokenID"]), int(r)))
+                self.printSuccessMessage()
                 self.delay()
             else:
-                print(
-                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}"
-                )
+                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}")
 
         for t in self.tokens:
             self.TryAction(_RepairWear, t)
 
     def RepairWearBatch(self):
+        self.logger.log("Starting wear repair (Batch)")
         (threshold, reduction) = self._get_repair_params("repair_wear")
 
         repairData = {
@@ -56,29 +47,25 @@ class HenoRepair(HenoBase):
         }
 
         def _prepare_data(t):
-            data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
-            ).call()
+            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
-                print(
-                    f"Wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}"
-                )
+                print(f"Wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}")
                 repairData["collectionIds"].append(t["CollectionID"])
                 repairData["tokenIds"].append(t["TokenID"])
                 repairData["repairAmounts"].append(r)
             else:
-                print(
-                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}"
-                )
+                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear.{Colors.ENDC}")
 
         def _batch_repair(*_):
             print("Performing batch wear repair: ", end=" ", flush=True)
-            self.Transaction(
-                self.contract_staking.functions.batchRepairTokenWear(repairData)
+            self.logger.log(
+                "Performing batch wear repair for tokens: "
+                + f"{str([f"({repairData["collectionIds"][i]}, {repairData["tokenIds"][i]}, repair: {repairData["repairAmounts"][i]}), " for i in range(len(repairData["tokenIds"]))])}"
             )
-            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
-            time.sleep(self.config["delay"])
+            self.Transaction(self.contract_staking.functions.batchRepairTokenWear(repairData))
+            self.printSuccessMessage()
+            self.delay()
 
         for t in self.tokens:
             _prepare_data(t)
@@ -90,51 +77,38 @@ class HenoRepair(HenoBase):
         self.TryAction(_batch_repair, None)
 
     def RepairChargeSequence(self):
+        self.logger.log("Starting charge repair (Sequence)")
         (threshold, repair) = self._get_repair_params("repair_charge")
 
         def _RepairCharge(_, t):
-            data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
-            ).call()
+            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
             toRepair = int(data[1]) - int(data[0])
             if toRepair >= int(threshold) and toRepair > 0:
                 r = min(repair, int(toRepair))
-                print(
-                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}",
-                    end=" ",
-                    flush=True,
-                )
-                self.Transaction(
-                    self.contract_chargepod.functions.repairCharge(
-                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
-                    )
-                )
-                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                print(f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}", end=" ", flush=True)
+                self.logger.log(f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}")
+                self.Transaction(self.contract_chargepod.functions.repairCharge(int(t["CollectionID"]), int(t["TokenID"]), int(r)))
+                self.printSuccessMessage()
                 self.delay()
             else:
-                print(
-                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}"
-                )
+                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}")
 
         for t in self.tokens:
             self.TryAction(_RepairCharge, t)
 
     ### Na dzień dzisiejszy (21.08.2025) NIE DZIAŁA
     def RepairChargeBatch(self):
+        self.logger.log("Starting charge repair (Batch)")
         (threshold, repair) = self._get_repair_params("repair_charge")
 
         repairData = {"collectionIds": [], "tokenIds": [], "operations": []}
 
         def _prepare_data(t):
-            data = self.contract_chargepod.functions.getRepairStatus(
-                t["CollectionID"], t["TokenID"]
-            ).call()
+            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
             toRepair = int(data[1]) - int(data[0])
             if toRepair >= int(threshold) and toRepair > 0:
                 r = min(repair, int(toRepair))
-                print(
-                    f"Charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}"
-                )
+                print(f"Charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}")
                 repairData["collectionIds"].append(t["CollectionID"])
                 repairData["tokenIds"].append(t["TokenID"])
                 repairData["operations"].append(
@@ -146,11 +120,14 @@ class HenoRepair(HenoBase):
                     }
                 )
             else:
-                print(
-                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}"
-                )
+                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge.{Colors.ENDC}")
 
         def _batch_repair(*_):
+            print("Performing batch charge repair: ", end=" ", flush=True)
+            self.logger.log(
+                "Performing batch charge repair for tokens: "
+                + f"{str([f"({repairData["collectionIds"][i]}, {repairData["tokenIds"][i]}, repair: {repairData["operations"]["chargePoints"][i]}), " for i in range(len(repairData["tokenIds"]))])}"
+            )
             self.Transaction(
                 self.contract_chargepod.functions.batchRepair(
                     repairData["collectionIds"],
@@ -158,7 +135,7 @@ class HenoRepair(HenoBase):
                     repairData["operations"],
                 )
             )
-            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+            self.printSuccessMessage()
             self.delay()
 
         for t in self.tokens:
@@ -166,6 +143,7 @@ class HenoRepair(HenoBase):
 
         if len(repairData["tokenIds"]) == 0:
             print(f"{Colors.WARNING}No tokens availabe to repair!{Colors.ENDC}")
+            self.logger.log("No tokens availabe to repair!")
             return
 
         self.TryAction(_batch_repair, None)

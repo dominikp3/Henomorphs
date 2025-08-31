@@ -19,13 +19,12 @@ class Summarizer:
         self._printTokens(self._last_pol, self._last_zico)
 
     def printSummary(self, pol, zico):
-        if not (
-            math.isclose(self._last_pol, pol) and math.isclose(self._last_zico, zico)
-        ):
+        if not (math.isclose(self._last_pol, pol) and math.isclose(self._last_zico, zico)):
             print(f"{Colors.OKBLUE}{"-" * 50}")
             print(f"{Colors.OKCYAN}Changes after operation: ")
             self._printTokens(pol - self._last_pol, zico - self._last_zico, True, Colors.OKBLUE)
             print(f"{Colors.OKCYAN}Total changes in current session: ")
             self._printTokens(pol - self._g_last_pol, zico - self._g_last_zico, True, Colors.OKBLUE)
             print(f"{Colors.OKBLUE}{"-" * 50}{Colors.ENDC}")
+            self.logger.log(f"CHANGES AFTER OPERATION: $POL: {pol - self._last_pol}, $ZICO: {zico - self._last_zico}")
         self._last_pol, self._last_zico = pol, zico

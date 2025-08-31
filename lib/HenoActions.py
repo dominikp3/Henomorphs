@@ -8,6 +8,7 @@ from lib.HenoBase import HenoBase
 
 class HenoActions(HenoBase):
     def PerformColonyActionSequence(self):
+        self.logger.log("Started perform actions (Sequence)")
         def _PerformColonyAction(attempt, t):
             if t["Action"] <= 0:
                 print(f"{Colors.WARNING}Token without action, skipping.{Colors.ENDC}")
@@ -37,18 +38,20 @@ class HenoActions(HenoBase):
                     end=" ",
                     flush=True,
                 )
+                self.logger.log(f"Performing action: ({t['CollectionID']}, {t['TokenID']}), {action}")
                 self.Transaction(
                     self.contract_chargepod.functions.performAction(
                         int(t["CollectionID"]), int(t["TokenID"]), int(action)
                     )
                 )
-                print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+                self.printSuccessMessage()
                 self.delay()
 
         for t in self.tokens:
             self.TryAction(_PerformColonyAction, t)
 
     def PerformColonyActionBatch(self):
+        self.logger.log("Started performing actions (Batch)")
         tokens = {}  # (collection, action): [token, ...]
 
         def _prepare_data(t):
@@ -79,7 +82,9 @@ class HenoActions(HenoBase):
             d = []
             for key, value in tokens.items():
                 d.append([key[0], key[1], str(value)])
-            print(tabulate(d, headers=h))
+            table = tabulate(d, headers=h)
+            print(table)
+            self.logger.log(f"Actions table:\n{table}")
 
         def _perform_batch_action(_, k):
             print(
@@ -87,12 +92,13 @@ class HenoActions(HenoBase):
                 end=" ",
                 flush=True,
             )
+            self.logger.log(f"Performing actions: (Collection: {k[0]}, Action: {k[1]})")
             self.Transaction(
                 self.contract_chargepod.functions.batchPerformAction(
                     int(k[0]), tokens[k], int(k[1])
                 )
             )
-            print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
+            self.printSuccessMessage()
             self.delay()
 
         print("Preparing chicks ...")
@@ -101,6 +107,7 @@ class HenoActions(HenoBase):
 
         if len(tokens) == 0:
             print(f"{Colors.WARNING}No tokens availabe to perform action!{Colors.ENDC}")
+            self.logger.log("No tokens availabe to perform action!")
             return
 
         print("\nHeno Groups:")
