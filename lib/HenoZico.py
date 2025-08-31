@@ -7,11 +7,7 @@ class HenoZico(HenoBase):
     def ClaimAll(self, tokensCount):
         def _ClaimAll(_, p):
             print(f"Claiming rewards (Chunk {p[0]+1}/{p[1]}):", end=" ", flush=True)
-            self.Transaction(
-                self.contract_staking.functions.claimRewardsBatchWithProgress(
-                    p[0] * 30, 30
-                )
-            )
+            self.Transaction(self.contract_staking.functions.claimBatch(p[0] * 30, 30))
             print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
 
         if tokensCount <= 0:
@@ -21,7 +17,7 @@ class HenoZico(HenoBase):
             return
 
         chunks = math.ceil(tokensCount / 30)
-        for i in range(math.ceil(tokensCount / 30)):
+        for i in range(chunks):
             if not self.TryAction(_ClaimAll, (i, chunks)):
                 print(f"{Colors.FAIL}Claiming failed!{Colors.ENDC}")
                 return

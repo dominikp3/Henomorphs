@@ -24,6 +24,7 @@ import sys
 import traceback
 import os
 from lib.ConfigSelector import GetConfig
+from lib.Summarizer import Summarizer
 
 
 def except_hook(exctype, value, _):
@@ -77,19 +78,12 @@ def main():
             Henomorphs(account, getpass.getpass("Password: "), hConf, True)
         exit()
 
-    last_pol, last_zico = 0, 0
+    summarizer = Summarizer(hen.GetPol(), hen.GetZico())
     while True:
         print(f"{Colors.HEADER}Henomorphs Python{Colors.ENDC}{Colors.OKCYAN}")
-        pol, zico = hen.GetPol(), hen.GetZico()
-        print(f"-" * 50)
-        print(
-            f"$POL: {pol} "
-            + (f"({pol-last_pol})" if last_pol != 0 else "")
-            + f"\n$ZICO: {zico} "
-            + (f"({zico-last_zico})" if last_zico != 0 else "")
-        )
-        last_pol, last_zico = pol, zico
-        print(f"-" * 50, end=f"\n{Colors.ENDC}")
+        print("-" * 50)
+        summarizer.printBalances()
+        print("-" * 50, end=f"\n{Colors.ENDC}")
         checkApproval(hen)
         print("1) Display info")
         print("2) Inspect")
@@ -130,6 +124,7 @@ def main():
                     HenoAutoGenConfig.genConfig(hen)
             case "0":
                 exit()
+        summarizer.printSummary(hen.GetPol(), hen.GetZico())
 
 
 def PerformAction(hen):
