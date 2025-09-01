@@ -14,6 +14,13 @@ Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
   - Możliwość użycia zaruwno performAction() jak i batchPerformAction()
 - Naprawa kurczaków
 - Sprawdzanie i claim zysków ze stakingu
+- ‼️NOWOŚĆ‼️
+  - Obsługa wielu portfeli i plików konfiguracyjnych (przypisanie akcji do kurczaka)
+  - Obsługa akcji specjalnych (6 - 8)
+  - Możliwość zmiany specjalizacji kurczaków
+  - Zapisywanie wykonywanych operacji do plików - wraz z dokładną datą i godziną
+  - Możliwość zmiany opłaty za transakcję (gas fee)
+  - Wyświetlanie **Txn hash** - można sprawdzić transakcję na [PolygonScan](https://polygonscan.com/)
 
 
 ## Instalacja:
@@ -56,30 +63,33 @@ pip install -r requirements.txt
 ```
 
 ## Konfiguracja
-Przed pierwszym użyciem należy odpowiednio skonfigurować skrypt. \
-Konfiguracja skłąda sie z dwóch czynności:
-- Import portfela EVM
-- Utworzenie pliku konfiguracyjnego
+Pliki konfiguracyjne przechowywane są w katalogu ```userdata```. \
+Jeśli katalog ```userdata``` nie istnieje, skrypt utworzy go automatycznie.
 
-Konfiguracja przechowywana jest w katalogu ```userdata```. \
-Jeśli katalog ```userdata``` nie istnieje, zostanie on utworzony automatycznie.
+Konfiguracja skłąda się z plików:
+- ```privkey.bin``` - zaszyfrowany klucz prywatny portfela
+- ```config.json``` - plik z konfiguracją skryptu **[Opcjonalny]**
+- ```heno.json``` - lista tokenów NFT
 
 Przy pierwszym uruchomieniu skryptu należy zaimportować portfel Polygon wprowadzając klucz prywatny, następnie ustawić hasło. Klucz zostanie zapisany w pliku ```userdata/privkey.bin``` w postaci zaszyfrowanej algorytmem AES z 256 bitowym kluczem utworzonym na podstawie wybranego hasła.
 
-~~Należy utworzyć plik tekstowy ```userdata/config.json```~~ \
-~~W pliku umieścić dane tokenów. Można użyć innej [nieoficjalnej nakładki](https://henomorphs.xyz/) w celu sprawdzenia swoich NFT~~
+> ❌ Uwaga ❌
+> - Zaleca się stosowanie długich i skomplikowanych haseł
+> - Nigdy nie udostępniaj nikomu swojego klucza prywatnego ani pliku ```privkey.bin```
+> - Nigdy nie przechowuj swojego klucza w formie niezaszyfrowanej (np w pliku .txt)
 
-W aktualnej wersji skrypt automatycznie pobierze listę zastakowanych NFT i utworzy plik ```userdata/config.json```, jeśli nie istnieje. Wciąż konieczne jest samodzielne ustawienie niektórych parametrów według własnych preferencji (np: akcje dla tokena)
+Jeśli plik ```heno.json``` (lub inny plik zawierający 'heno' w nazwie) nie istnieje, skrypt automatycznie pobierze listę zastakowanych NFT i utworzy go automatycznie.
+Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych preferencji (np: akcje dla tokena)
 
-Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć linki do darmowych serwerów rpc
+💡 W przypadku późniejszej zmiany tokenów NFT w portfelu, możesz zaktualizować plik używając funkcji **42**
 
-### Opis formatu - wszystkie dostępne parametry
+
+### Opis formatu
+#### config.json - wszystkie dostępne parametry
 ```js
-{
-  "Config": { // Parametry konfiguracji
-    "max_transaction_attempts": (integer), 
+{ // Parametry konfiguracji
+    "max_transaction_attempts": (integer), // W nawiasie () podano typy danych
     // Maksymalna ilość prób wykonania transakcji (powtarzanie w przypadku niepowodzenia)
-    // PARAMETR WYMAGANY
 
     "random_action_on_fail": (integer),
     // użycie losowej akcji w przypadku niepowodzenia z wybraną akcją (0 - wyłączone, liczba określa po ilu nieudanych próbach stosowana jest losowa). Ta opcja może się przydać, jeśli chcesz mieć większą pweność, że każdy kurczak wykona jakąś akcję. Jak jedna nie działa, to inna.
@@ -87,7 +97,6 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
 
     "delay": (number),
     // Opóźnienie przed wykonaniem kolejnej transakcji w sekundach (służy do zminimalizowania ryzyka wystąpienia błędów, jeśli wykonujemy za dużo transakcji naraz)
-    // PARAMETR WYMAGANY
 
     "debug": (boolean),
     // Po ustawieniu na true wyświetla więcej informacji (niekoniecznie przydatne dla zwykłych użytkowników).
@@ -100,6 +109,22 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
 
     "rpc": (string)
     // Niestandardowy Link do rpc sieci Polygon.
+    // Listę dostępnych darmowych RPC możesz znaleźć na https://chainlist.org/chain/137
+
+    "log": (boolean),
+    // Logowanie do pliku
+    // Zapisuję historię wykonywanych operacji w katalogu userdata/logs/
+
+    "print_tx_hash": (boolean),
+    // Wyświetlaj hash transakcji.
+
+    "print_priv_key": (boolean),
+    // Wyświetlaj klucz prywatny
+    // Opcja przydatna jeśli chcesz wyeksporwować klucz z pliku privkey.bin
+
+    "gas_mul": (number),
+    // Mnożnik do modyfikacji opłaty gas fee. (domyślnie 1)
+    // Ustawienie na wyższą wartość (np: 1.2) może zmniejszyć prawdopodobieństwo wystąpienia błędu i przyspieszyć transakcje
 
     "repair_wear": { // Konfiguracja naprawy wear
       "threshold": (integer),
@@ -123,8 +148,12 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
       "actions": (string),
       "repair_wear": (string)
     }
-  },
-  "Henomorphs": [ // Lista tokenów
+}
+```
+
+#### heno.json
+```js
+[ // Lista tokenów
     {
       "CollectionID": (int),
       // ID kolekcji (2 lub 3)
@@ -132,89 +161,128 @@ Na stronie [chainlist.org](https://chainlist.org/chain/137) można znaleźć lin
       "TokenID": (int),
       // ID tokena
 
-      "Action": (int)
-      // Akcja (1 - 5). Możesz ustawić na 0, jeśli nie chcesz wykonywać akcji dla tego tokena
+      "Action": (int),
+      // Akcja (1 - 8). Możesz ustawić na 0, jeśli nie chcesz wykonywać akcji dla tego tokena
+
+      "Spec": (int)
+      // Specjalizacjia (0 - 2), parametr opcjonalny
+      // -1 - brak
     },
-    ...
-  ]
-}
+    // ...
+]
 ```
 
 ## Przykładowa konfiguracja
 **Uwaga: w pliku z konfiguracją nie należy umieszczać komentarzy (//)**  
-**Jeśli kopiujesz ten przykład, nie zapomnij zmienić przykładowych ID tokenów na swoje**
+
+### config.json
+W tym przykładzie podano parametry domyślne.\
+Plik ```config.json``` i wszystkie parametery są **opcjonalne**.
 ```json
 {
-  "Config": {
-    "max_transaction_attempts": 5,
-    "random_action_on_fail": 2,
-    "delay": 3,
-    "rpc": "https://polygon-pokt.nodies.app"
+  "max_transaction_attempts": 5,
+  "random_action_on_fail": 0,
+  "delay": 3,
+  "debug": false,
+  "dummy": 0,
+  "rpc": "https://polygon-rpc.com",
+  "log": false,
+  "print_tx_hash": false,
+  "print_priv_key": false,
+  "gas_mul": 1.0,
+  "repair_wear": {
+    "threshold": -1,
+    "max_repair": -1
   },
-  "Henomorphs": [
-    {
-      "CollectionID": 2,
-      "TokenID": 1853,
-      "Action": 4
-    },
-    {
-      "CollectionID": 2,
-      "TokenID": 1887,
-      "Action": 5
-    },
-    {
-      "CollectionID": 2,
-      "TokenID": 364,
-      "Action": 1
-    },
-    {
-      "CollectionID": 2,
-      "TokenID": 873,
-      "Action": 4
-    },
-    {
-      "CollectionID": 2,
-      "TokenID": 1632,
-      "Action": 5
-    },
-    {
-      "CollectionID": 2,
-      "TokenID": 322,
-      "Action": 2
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 1702,
-      "Action": 5
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 1612,
-      "Action": 3
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 1510,
-      "Action": 2
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 1492,
-      "Action": 4
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 1641,
-      "Action": 2
-    },
-    {
-      "CollectionID": 3,
-      "TokenID": 696,
-      "Action": 5
-    }
-  ]
+  "repair_charge": {
+    "threshold": -1,
+    "max_repair": -1
+  },
+  "algorithms": {
+    "actions": "ask",
+    "repair_wear": "ask"
+  }
 }
 ```
+
+### heno.json
+Plik **wymagany**\
+Jeśli kopiujesz ten przykład, nie zapomnij zmienić przykładowych ID tokenów na swoje
+```json
+[
+  {
+    "CollectionID": 2,
+    "TokenID": 1853,
+    "Action": 4
+  },
+  {
+    "CollectionID": 2,
+    "TokenID": 1887,
+    "Action": 5
+  },
+  {
+    "CollectionID": 2,
+    "TokenID": 364,
+    "Action": 1
+  },
+  {
+    "CollectionID": 2,
+    "TokenID": 873,
+    "Action": 4
+  },
+  {
+    "CollectionID": 2,
+    "TokenID": 1632,
+    "Action": 5
+  },
+  {
+    "CollectionID": 2,
+    "TokenID": 322,
+    "Action": 2
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 1702,
+    "Action": 5
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 1612,
+    "Action": 3
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 1510,
+    "Action": 2
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 1492,
+    "Action": 4
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 1641,
+    "Action": 2
+  },
+  {
+    "CollectionID": 3,
+    "TokenID": 696,
+    "Action": 5
+  }
+]
+```
+
+### Multikonta i wiele konfigurcji
+Plik ```config.json``` powinien być **tylko jeden**, w katalogu ```userdata```
+
+W celu zaimportowania dodatkowych portfeli, należy utworzyć folder o dowolnej nazwie w katalogu ```userdata```\
+Przy uruchomieniu skryptu pojawi się pytanie o wybór konta/portfela ('Default account' to pierwsze konto - folder userdata)\
+Przy pierwszym użyciu każdego kolejnego konta należy zaimportować portfel, utworzyć konfigurację tokenów.
+
+W celu utworzenia wielu konfiguracji tokenów, należy w folderze ```userdata``` (lub folderze innego konta) utworzyć dodatkowe pliki .json zawierające w nazwie 'heno'. Skrypt pozwoli wybrać plik przy uruchomieniu.\
+💡 Folder nie musi zawierać pliku ```heno.json``` (domyślna nazwa), ale powinien zawierać **co najmniej jeden** plik ze słowem 'heno' w nazwie
+
 
 ## Uruchamianie
 Użyć dołączonych skryptów (run.bat lub run.sh) \
