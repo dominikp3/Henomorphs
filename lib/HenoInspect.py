@@ -9,7 +9,7 @@ class HenoInspect(HenoBase):
 
         def _Inspect(_, p):
             print("Performing core Inspection: ", end=" ", flush=True)
-            self.logger.log(f"Performing core Inspection for tokens: {str([f"({p[0][i]}, {p[1][i]}), " for i in range(len(p[0]))])}")
+            self.logger.log(f"Performing core Inspection for tokens: {str([{"CollectionID": p[0][i], "TokenID": p[1][i]} for i in range(len(p[0]))])}")
             self.Transaction(self.contract_nft.functions.inspect(p[0], p[1]))
             self.printSuccessMessage()
 
@@ -22,7 +22,7 @@ class HenoInspect(HenoBase):
             if t <= 12 * 60 * 60:
                 tr = 12 * 60 * 60 - t
                 print(
-                    f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {int(tr / 60 / 60):02d}:{int((int(tr / 60)) - 60 * int(tr / 60 / 60)):02d}{Colors.ENDC}"
+                    f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Next inspection possible in: {self.secondsToHMS(tr)}{Colors.ENDC}"
                 )
             elif int(data[2]) >= 100:
                 print(f"{Colors.WARNING}Cannot inspect token ({token['CollectionID']}, {token['TokenID']}). Kinship: {data[2]}{Colors.ENDC}")

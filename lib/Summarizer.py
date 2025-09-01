@@ -1,5 +1,6 @@
 import math
 from lib.Colors import Colors
+from lib.FileLogger import FileLogger
 
 
 class Summarizer:
@@ -26,5 +27,5 @@ class Summarizer:
             print(f"{Colors.OKCYAN}Total changes in current session: ")
             self._printTokens(pol - self._g_last_pol, zico - self._g_last_zico, True, Colors.OKBLUE)
             print(f"{Colors.OKBLUE}{"-" * 50}{Colors.ENDC}")
-            self.logger.log(f"CHANGES AFTER OPERATION: $POL: {pol - self._last_pol}, $ZICO: {zico - self._last_zico}")
+            FileLogger().log(f"CHANGES AFTER OPERATION: $POL: {pol - self._last_pol}, $ZICO: {zico - self._last_zico}")
         self._last_pol, self._last_zico = pol, zico

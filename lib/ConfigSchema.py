@@ -22,6 +22,9 @@ config_schema = {
         "dummy": {"type": "integer", "minimum": 0, "maximum": 2},
         "rpc": {"type": "string"},
         "log": {"type": "boolean"},
+        "print_tx_hash": {"type": "boolean"},
+        "print_priv_key": {"type": "boolean"},
+        "gas_mul": {"type": "number", "minimum": 0.5},
         "repair_wear": {"$ref": "#/definitions/repair"},
         "repair_charge": {"$ref": "#/definitions/repair"},
         "algorithms": {

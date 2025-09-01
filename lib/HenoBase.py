@@ -1,3 +1,5 @@
+from datetime import timedelta
+import math
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 import time
@@ -51,7 +53,7 @@ class HenoBase:
         if self.random_action_on_fail >= self.max_transaction_attempts:
             raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
         self.debug_mode = self.config.get("debug", False)
-        self.logger = FileLogger(f"userdata/{account}logs/", self.config.get("log", False))
+        self.logger = FileLogger(f"userdata/logs/{account}", self.config.get("log", False))
         self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
         self.web3.provider = Web3.HTTPProvider(self.node_url)
@@ -60,6 +62,11 @@ class HenoBase:
             self.private_key = Encryption.decrypt(file.read(), password).decode("utf-8")
             PA = self.web3.eth.account.from_key(self.private_key)
             self.public_address = PA.address
+
+        print("-" * 50)
+        print(f"{Colors.OKBLUE}Wallet: {self.public_address}{Colors.ENDC}")
+        if self.config.get("print_priv_key", False):
+            print(f"{Colors.FAIL}Private key: {self.private_key}{Colors.ENDC}")
 
         if self.web3.is_connected():
             print("-" * 50)
@@ -72,7 +79,7 @@ class HenoBase:
             raise Exception("Connection Failed")
 
         self.logger.log("-" * 100)
-        self.logger.log(f"Successfully logged in: {self.public_address}, using config: {henoConfFile}")
+        self.logger.log(f"Successfully logged in: {self.public_address}, using config: '{henoConfFile}'")
 
         self.henoConfPath = f"userdata/{account}{henoConfFile}"
         if configGenOnly or not os.path.isfile(self.henoConfPath):
@@ -114,6 +121,18 @@ class HenoBase:
             print("call_function:")
             print(call_function)
 
+        gas_mul = self.config.get("gas_mul", 1.0)
+        if not math.isclose(gas_mul, 1.0):
+
+            def mul(s):
+                v = call_function.get(s, 0)
+                call_function[s] = int(v * gas_mul)
+                if self.debug_mode:
+                    print(f"Increasing {s}: {v} -> {call_function[s]}")
+
+            for i in ["gas", "maxPriorityFeePerGas", "maxFeePerGas"]:
+                mul(i)
+
         if (d := self.config.get("dummy", 0)) > 0:
             if d == 1:
                 return
@@ -125,6 +144,12 @@ class HenoBase:
 
         # Send transaction
         send_tx = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+        self.logger.log(f"TX Hash: {send_tx.to_0x_hex()}")
+        if self.config.get("print_tx_hash", False):
+            print(send_tx.to_0x_hex(), end=" ", flush=True)
+            if self.debug_mode:
+                print()
 
         # Wait for transaction receipt
         tx_receipt = self.web3.eth.wait_for_transaction_receipt(send_tx)
@@ -151,6 +176,7 @@ class HenoBase:
                 print(f"{Colors.ENDC}", end="")
                 if attemptsLeft > 0:
                     print("Retrying...", end=" ", flush=True)
+                    self.logger.log("Retrying...")
                 self.delay()
         return attemptsLeft == -1
 
@@ -170,3 +196,6 @@ class HenoBase:
     def printSuccessMessage(self):
         print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
         self.logger.log("Transaction successfull")
+
+    def secondsToHMS(self, time):
+        return str(timedelta(seconds=time))

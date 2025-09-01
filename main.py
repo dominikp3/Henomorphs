@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from lib.FileLogger import FileLogger
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
 from lib.Encryption import InvalidPasswordError
@@ -31,9 +32,12 @@ def except_hook(exctype, value, _):
     if exctype == KeyboardInterrupt:
         print(f"{Colors.HEADER}Good Bye{Colors.ENDC}")
     else:
-        print(Colors.FAIL)
-        traceback.print_exception(value)
-        print(Colors.ENDC)
+        e = "".join(traceback.format_exception(value))
+        print(f"{Colors.FAIL}{e}{Colors.ENDC}")
+        try:
+            FileLogger().log(f"The script crashed:\n{e}")
+        except:
+            pass
     exit()
 
 
@@ -56,9 +60,7 @@ def main():
         try:
             hen = Henomorphs(account, getpass.getpass("Password: "), hConf)
         except InvalidPasswordError:
-            print(
-                f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}"
-            )
+            print(f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}")
             exit()
     else:
         print(
@@ -72,10 +74,10 @@ def main():
         password = input("Enter password: ")
         Henomorphs.SaveKey(account, prvkey, password)
         print(f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}")
-        if os.path.isfile("userdata/config.json"):
+        if os.path.isfile(f"userdata/{account}{hConf}"):
             print(f"{Colors.OKGREEN}Please restart script{Colors.ENDC}")
         else:
-            Henomorphs(account, getpass.getpass("Password: "), hConf, True)
+            Henomorphs(account, password, hConf, True)
         exit()
 
     summarizer = Summarizer(hen.GetPol(), hen.GetZico())
@@ -184,12 +186,8 @@ def RepairWear(hen):
 
     while True:
         print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
-        print(
-            f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}"
-        )
-        print(
-            f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}"
-        )
+        print(f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}")
+        print(f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         if _match(input("Select function: ")):
             return
@@ -198,15 +196,9 @@ def RepairWear(hen):
 def ApproveZico(hen):
     while True:
         print(f"{Colors.HEADER}Select contract address{Colors.ENDC}")
-        print(
-            f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) - Inspection ({hen.GetZicoApproval(hen.contract_nft_address)})"
-        )
-        print(
-            f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) - Actions, Repair charge ({hen.GetZicoApproval(hen.contract_chargepod_address)})"
-        )
-        print(
-            f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) - Repair Wear ({hen.GetZicoApproval(hen.contract_staking_address)})"
-        )
+        print(f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) - Inspection ({hen.GetZicoApproval(hen.contract_nft_address)})")
+        print(f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) - Actions, Repair charge ({hen.GetZicoApproval(hen.contract_chargepod_address)})")
+        print(f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) - Repair Wear ({hen.GetZicoApproval(hen.contract_staking_address)})")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -225,9 +217,7 @@ def checkApproval(hen):
         or hen.GetZicoApproval(hen.contract_chargepod_address) <= 50
         or hen.GetZicoApproval(hen.contract_staking_address) <= 50
     ):
-        print(
-            f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors."
-        )
+        print(f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.")
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 
 
