@@ -81,7 +81,7 @@ Przy pierwszym uruchomieniu skryptu należy zaimportować portfel Polygon wprowa
 Jeśli plik ```heno.json``` (lub inny plik zawierający 'heno' w nazwie) nie istnieje, skrypt automatycznie pobierze listę zastakowanych NFT i utworzy go automatycznie.
 Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych preferencji (np: akcje dla tokena)
 
-💡 W przypadku późniejszej zmiany tokenów NFT w portfelu, możesz zaktualizować plik używając funkcji **42**
+> 💡 W przypadku późniejszej zmiany tokenów NFT w portfelu, możesz zaktualizować plik używając funkcji **42**
 
 
 ### Opis formatu
@@ -280,8 +280,9 @@ W celu zaimportowania dodatkowych portfeli, należy utworzyć folder o dowolnej 
 Przy uruchomieniu skryptu pojawi się pytanie o wybór konta/portfela ('Default account' to pierwsze konto - folder userdata)\
 Przy pierwszym użyciu każdego kolejnego konta należy zaimportować portfel, utworzyć konfigurację tokenów.
 
-W celu utworzenia wielu konfiguracji tokenów, należy w folderze ```userdata``` (lub folderze innego konta) utworzyć dodatkowe pliki .json zawierające w nazwie 'heno'. Skrypt pozwoli wybrać plik przy uruchomieniu.\
-💡 Folder nie musi zawierać pliku ```heno.json``` (domyślna nazwa), ale powinien zawierać **co najmniej jeden** plik ze słowem 'heno' w nazwie
+W celu utworzenia wielu konfiguracji tokenów, należy w folderze ```userdata``` (lub folderze innego konta) utworzyć dodatkowe pliki .json zawierające w nazwie 'heno'. Skrypt pozwoli wybrać plik przy uruchomieniu.
+
+> 💡 Folder nie musi zawierać pliku ```heno.json``` (domyślna nazwa), ale powinien zawierać **co najmniej jeden** plik ze słowem 'heno' w nazwie
 
 
 ## Uruchamianie

@@ -29,10 +29,10 @@ class HenoBase:
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(address=self.contract_staking_address, abi=file.read())
 
-        if not configGenOnly:
-            with open("abi/abi_chargepod.json", "r") as file:
-                self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
+        with open("abi/abi_chargepod.json", "r") as file:
+            self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
 
+        if not configGenOnly:
             with open("abi/abi_nft.json", "r") as file:
                 self.contract_nft = self.web3.eth.contract(address=self.contract_nft_address, abi=file.read())
 

@@ -19,7 +19,7 @@ class HenoSpec(HenoBase):
                 return
             curSpec = self.GetSpec(t)
             if curSpec == spec:
-                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), specialization already set.")
+                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), specialization already set.{Colors.ENDC}")
             else:
                 print(f"Changing specialization: ({t['CollectionID']}, {t['TokenID']}), {spec}", end=" ", flush=True)
                 self.logger.log(f"Changing specialization: ({t['CollectionID']}, {t['TokenID']}), {spec}")
