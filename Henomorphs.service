@@ -1,0 +1,14 @@
+[Unit]
+Description=Henomorphs Colony Wars defense bot (Linux daemon)
+After=network.target
+
+[Service]
+ExecStart=/path/to/Henomorphs/rundaemon.sh
+Restart=no
+User=YOUR_USER
+WorkingDirectory=/path/to/Henomorphs
+StandardOutput=none
+StandardError=none
+
+[Install]
+WantedBy=multi-user.target

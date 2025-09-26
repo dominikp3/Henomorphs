@@ -5,19 +5,20 @@ from web3.middleware import ExtraDataToPOAMiddleware
 import time
 import traceback
 from lib.Colors import Colors
+from lib.DecodedContract import DecodedContract
 from lib.Encryption import Encryption
 import os
 import json
 import jsonschema
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
-from lib.ConfigSchema import config_schema, heno_config_schema
+from lib.ConfigSchema import config_schema, heno_config_schema, colony_config_schema
 from lib.FileLogger import FileLogger
 
 
 class HenoBase:
     ChickChar = "\U0001f425"
 
-    def __init__(self, account, password, henoConfFile, configGenOnly=False):
+    def __init__(self, account, password, henoConfFile, configGenOnly=False, colonyConfFile=None):
         self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
@@ -29,8 +30,9 @@ class HenoBase:
         with open("abi/abi_stake.json", "r") as file:
             self.contract_staking = self.web3.eth.contract(address=self.contract_staking_address, abi=file.read())
 
-        with open("abi/abi_chargepod.json", "r") as file:
-            self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
+        # with open("abi/abi_chargepod.json", "r") as file:
+        #     self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
+        self.contract_chargepod = DecodedContract(self.web3, self.contract_chargepod_address, abi_path="abi/abi_chargepod.json")
 
         if not configGenOnly:
             with open("abi/abi_nft.json", "r") as file:
@@ -50,6 +52,7 @@ class HenoBase:
         self.max_transaction_attempts = self.config.get("max_transaction_attempts", 5)
         self.random_action_on_fail = self.config.get("random_action_on_fail", 0)
         self.delay_t = self.config.get("delay", 3)
+        self.delay_ai_defender = self.config.get("ai_defender_delay", 600)
         if self.random_action_on_fail >= self.max_transaction_attempts:
             raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
         self.debug_mode = self.config.get("debug", False)
@@ -82,6 +85,7 @@ class HenoBase:
         self.logger.log(f"Successfully logged in: {self.public_address}, using config: '{henoConfFile}'")
 
         self.henoConfPath = f"userdata/{account}{henoConfFile}"
+        self.colonyConfPath = f"userdata/{account}{colonyConfFile}"
         if configGenOnly or not os.path.isfile(self.henoConfPath):
             print(f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}")
             self.logger.log(f"No {henoConfFile} file found! Trying to generate one...")
@@ -92,6 +96,12 @@ class HenoBase:
         with open(self.henoConfPath, "r") as file:
             self.tokens = json.load(file)
             jsonschema.validate(instance=self.tokens, schema=heno_config_schema)
+
+        self.colony = None
+        if self.colonyConfPath is not None:
+            with open(self.colonyConfPath, "r") as file:
+                self.colony = json.load(file)
+                jsonschema.validate(instance=self.colony, schema=colony_config_schema)
 
     @staticmethod
     def SaveKey(account, key, password):
@@ -199,3 +209,9 @@ class HenoBase:
 
     def secondsToHMS(self, time):
         return str(timedelta(seconds=time))
+
+    def GetColoredBool(self, b: bool):
+        if b:
+            return f"{Colors.OKGREEN}true{Colors.ENDC}"
+        else:
+            return f"{Colors.FAIL}false{Colors.ENDC}"
