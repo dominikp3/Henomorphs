@@ -70,6 +70,7 @@ Konfiguracja skłąda się z plików:
 - ```privkey.bin``` - zaszyfrowany klucz prywatny portfela
 - ```config.json``` - plik z konfiguracją skryptu **[Opcjonalny]**
 - ```heno.json``` - lista tokenów NFT
+- ```colony.json``` - konfiguracja do wojen kolonialnych 🎮⚔️
 
 Przy pierwszym uruchomieniu skryptu należy zaimportować portfel Polygon wprowadzając klucz prywatny, następnie ustawić hasło. Klucz zostanie zapisany w pliku ```userdata/privkey.bin``` w postaci zaszyfrowanej algorytmem AES z 256 bitowym kluczem utworzonym na podstawie wybranego hasła.
 
@@ -102,7 +103,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     // Po ustawieniu na true wyświetla więcej informacji (niekoniecznie przydatne dla zwykłych użytkowników).
 
     "dummy": (int),
-    // Parametr testowy - tylko do testowania
+    // Tryb atrapy (do testowania)
     // 0 - Normalne działanie (wartość domyślna)
     // 1 - Transakcja zawsze przechodzi pomyślnie
     // 2 - Zawsze błąd
@@ -170,6 +171,23 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     },
     // ...
 ]
+```
+
+### colony.json
+```js
+{
+    "Colony": (string), // Adres kolonii
+    "Season": (int), // numer sezonu
+    "WarKits": [     // Lista zestawów bojowych
+
+        {// objekt zestawu
+            "CollectionIDs": [], // Lista ID kolekcji (int)
+            "TokenIDs": [] // Lista ID tokenów (int)
+        },
+
+        ...
+    ]
+}
 ```
 
 ## Przykładowa konfiguracja
@@ -273,6 +291,23 @@ Jeśli kopiujesz ten przykład, nie zapomnij zmienić przykładowych ID tokenów
 ]
 ```
 
+### colony.json
+Plik ```colony.json``` jest **opcjonalny**.\
+Wszystkie parametry (jeśli plik istnieje) są **wymagane**\
+Lista "WarKits" musi zawierac **co najmniej jeden element**
+```json
+{
+    "Colony": "0x61e5a17b04a6285fc3b568559678011071f86d300c5d5d6862e25f5492bac27a",
+    "Season": 2,
+    "WarKits": [
+        {
+            "CollectionIDs": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            "TokenIDs": [890, 893, 896, 897, 898, 905, 906, 907, 298, 304]
+        }
+    ]
+}
+```
+
 ### Multikonta i wiele konfigurcji
 Plik ```config.json``` powinien być **tylko jeden**, w katalogu ```userdata```
 
@@ -281,6 +316,8 @@ Przy uruchomieniu skryptu pojawi się pytanie o wybór konta/portfela ('Default 
 Przy pierwszym użyciu każdego kolejnego konta należy zaimportować portfel, utworzyć konfigurację tokenów.
 
 W celu utworzenia wielu konfiguracji tokenów, należy w folderze ```userdata``` (lub folderze innego konta) utworzyć dodatkowe pliki .json zawierające w nazwie 'heno'. Skrypt pozwoli wybrać plik przy uruchomieniu.
+
+W przypadku Wojen Kolonialnych, również można mieć wiele plików - muszą one zawierać słowo "colony" w nazwie i rozszeżenie .json
 
 > 💡 Folder nie musi zawierać pliku ```heno.json``` (domyślna nazwa), ale powinien zawierać **co najmniej jeden** plik ze słowem 'heno' w nazwie
 

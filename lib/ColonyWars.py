@@ -87,7 +87,7 @@ class ColonyWars(HenoBase):
         a = []
         l = self.CWGetUnresolvedBattles()
         for i in l:
-            if time.time() - int(i["battleStartTime"]) >= 60 * 60 * 3:
+            if time.time() - int(i["battleStartTime"]) >= 60 * 60 * 2:
                 a.append(i)
         return a
 
@@ -179,7 +179,7 @@ class ColonyWars(HenoBase):
 
     def CWResolveBattle(self, battle=None):
         if battle == None:
-            battle = self.CWSelectBattle(self.CWGetAvailabeForDefend())
+            battle = self.CWSelectBattle(self.CWGetAvailabeForResolve())
 
         if battle == None:
             return

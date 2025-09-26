@@ -85,7 +85,7 @@ class HenoBase:
         self.logger.log(f"Successfully logged in: {self.public_address}, using config: '{henoConfFile}'")
 
         self.henoConfPath = f"userdata/{account}{henoConfFile}"
-        self.colonyConfPath = f"userdata/{account}{colonyConfFile}"
+        self.colonyConfPath = f"userdata/{account}{colonyConfFile}" if colonyConfFile is not None else None
         if configGenOnly or not os.path.isfile(self.henoConfPath):
             print(f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}")
             self.logger.log(f"No {henoConfFile} file found! Trying to generate one...")
