@@ -181,6 +181,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     "WarKits": [     // Lista zestawów bojowych
 
         {// objekt zestawu
+            "name": (string), // Opcjonalna nazwa
             "CollectionIDs": [], // Lista ID kolekcji (int)
             "TokenIDs": [] // Lista ID tokenów (int)
         },

@@ -76,6 +76,7 @@ colony_config_schema = {
                         "minItems": 2,
                         "items": {"type": "integer", "minimum": 0},
                     },
+                    "name": {"type": "string"}
                 },
             },
         },

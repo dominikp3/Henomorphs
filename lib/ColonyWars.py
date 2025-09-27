@@ -24,7 +24,7 @@ class ColonyWars(HenoBase):
             print(f"{Colors.HEADER}Multiple War Kits detected:{Colors.ENDC}")
             i = 1
             for c in kits:
-                print(f"{i})")
+                print(f"{i}) {c.get("name", "")}")
                 print(f"\t{c["CollectionIDs"]}")
                 print(f"\t{c["TokenIDs"]}\n")
                 i += 1
