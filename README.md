@@ -310,6 +310,10 @@ Lista "WarKits" musi zawierac **co najmniej jeden element**
         {
             "CollectionIDs": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
             "TokenIDs": [890, 893, 896, 897, 898, 905, 906, 907, 298, 304]
+        },
+        {
+            "CollectionIDs": [3, 3, 3, 3, 2, 2, 2, 2, 2, 2],
+            "TokenIDs": [306, 307, 334, 335, 1723, 1724, 1725, 1732, 2004, 2105]
         }
     ]
 }
