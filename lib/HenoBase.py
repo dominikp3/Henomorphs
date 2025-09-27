@@ -1,5 +1,6 @@
 from datetime import timedelta
 import math
+from pprint import pformat
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 import time
@@ -17,6 +18,7 @@ from lib.FileLogger import FileLogger
 
 class HenoBase:
     ChickChar = "\U0001f425"
+    ZicoDividor = 1000000000000000000
 
     def __init__(self, account, password, henoConfFile, configGenOnly=False, colonyConfFile=None):
         self.web3 = Web3()
@@ -205,6 +207,19 @@ class HenoBase:
 
     def GetColoredBool(self, b: bool):
         if b:
-            return f"{Colors.OKGREEN}true{Colors.ENDC}"
+            return f"{Colors.OKGREEN}True{Colors.ENDC}"
         else:
-            return f"{Colors.FAIL}false{Colors.ENDC}"
+            return f"{Colors.FAIL}False{Colors.ENDC}"
+
+    def bToHex(self, bytes):
+        return f"0x{bytes.hex()}"
+
+    def shortAddr(self, strHexAdr):
+        return f"{strHexAdr[0:6]}...{strHexAdr[-4:]}"
+    
+    def DictToPrettyString(self, dict, colorBool=True):
+        s = pformat(dict, sort_dicts=False)
+        if colorBool:
+            s = s.replace("True", f"{Colors.OKGREEN}True{Colors.ENDC}")
+            s = s.replace("False", f"{Colors.FAIL}False{Colors.ENDC}")
+        return s

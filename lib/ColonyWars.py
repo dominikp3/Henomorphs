@@ -1,16 +1,13 @@
 from copy import deepcopy
 from datetime import datetime
-from pprint import pprint
 import time
 import traceback
+from tabulate import tabulate
 from lib.Colors import Colors
 from lib.HenoBase import HenoBase
 
 
 class ColonyWars(HenoBase):
-    def bToHex(self, bytes):
-        return f"0x{bytes.hex()}"
-
     def CWIsConfigured(self) -> bool:
         return self.colony is not None
 
@@ -49,8 +46,8 @@ class ColonyWars(HenoBase):
             + f"canDefend: {self.GetColoredBool(d["readiness"]["canDefend"])}\n"
             + f"canSiege: {self.GetColoredBool(d["readiness"]["canSiege"])}\n"
             + f"canRaid: {self.GetColoredBool(d["readiness"]["canRaid"])}\n"
-            + f"Cooldown: {self.secondsToHMS(max(d["readiness"]["cooldowns"]))}\n"
-            + f"THREATS:\n\n"
+            + f"Cooldown: {self.secondsToHMS(max(d["readiness"]["cooldowns"]))}\n\n"
+            + f"THREATS:\n"
             + f"level: {d["threats"]["level"]}\n"
             + f"underAttack: {self.GetColoredBool(d["threats"]["underAttack"])}\n"
             + f"territoriesUnderSiege: {self.GetColoredBool(d["threats"]["territoriesUnderSiege"])}\n\n"
@@ -63,7 +60,27 @@ class ColonyWars(HenoBase):
             i["battleStartTime"] = datetime.fromtimestamp(int(i["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
-        pprint(d)
+            i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
+        print(self.DictToPrettyString(d))
+
+    def CWCompareWithColony(self, potentialVictim):
+        d = self.contract_chargepod.call_decoded("compareBattlePower", self.colony["Colony"], potentialVictim)
+        print(self.DictToPrettyString(d))
+
+    def CWRanking(self, fullAddress: bool):
+        d = self.contract_chargepod.call_decoded("getSeasonWarPrizeRanking", self.colony["Season"], 1000)
+        for i in d:
+            isMy = i["colonyId"] == bytes.fromhex(self.colony["Colony"][2:])
+            i["colonyId"] = self.bToHex(i["colonyId"])
+            i["estimatedPrize"] = i["estimatedPrize"] / self.ZicoDividor
+            i["earnedThisSeason"] = i["earnedThisSeason"] / self.ZicoDividor
+            if not fullAddress:
+                i["colonyId"] = self.shortAddr(i["colonyId"])
+                i["ownerAddress"] = self.shortAddr(i["ownerAddress"])
+            if isMy:
+                i["colonyId"] = f"{Colors.WARNING}{i["colonyId"]}{Colors.ENDC}"
+            i["inAlliance"] = self.GetColoredBool(i["inAlliance"])
+        print(tabulate(d, headers="keys"))
 
     def CWGetUnresolvedBattles(self):
         bs = []
@@ -104,9 +121,9 @@ class ColonyWars(HenoBase):
                 tmp["battleStartTime"] = datetime.fromtimestamp(int(tmp["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
                 tmp["battleId"] = self.bToHex(tmp["battleId"])
                 tmp["opponent"] = self.bToHex(tmp["opponent"])
-                tmp["stakeAmount"] = tmp["stakeAmount"] / 1000000000000000000
+                tmp["stakeAmount"] = tmp["stakeAmount"] / self.ZicoDividor
                 print(f"{i})")
-                pprint(tmp)
+                print(self.DictToPrettyString(tmp))
                 print()
                 i += 1
             if 0 < (v := int(input("Select battle: "))) < i:
@@ -140,7 +157,7 @@ class ColonyWars(HenoBase):
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.initiateAttack(
-                    self.colony["Colony"], victim, kit["CollectionIDs"], kit["TokenIDs"], int(stakeAmmount * 1000000000000000000)
+                    self.colony["Colony"], victim, kit["CollectionIDs"], kit["TokenIDs"], int(stakeAmmount * self.ZicoDividor)
                 )
             )
             self.printSuccessMessage()

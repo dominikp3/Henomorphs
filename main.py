@@ -231,11 +231,13 @@ def ColonyWars(hen, summarizer):
 
     while True:
         print(f"{Colors.HEADER}Select option{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}1) Check status")
-        print(f"{Colors.OKCYAN}2) Check Battle History")
+        print(f"{Colors.OKCYAN}1) Check status \U0001F4C3")
+        print(f"{Colors.OKCYAN}2) Check Battle History \U0001F4D6")
         print(f"{Colors.OKCYAN}3) Attack \U00002694")
         print(f"{Colors.OKCYAN}4) Defense \U0001f6e1")
         print(f"{Colors.OKCYAN}5) Resolve Battle \U0001f4dc")
+        print(f"{Colors.OKCYAN}6) Compare colony battle power \U0001F94A")
+        print(f"{Colors.OKCYAN}7) Ranking \U0001F396")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -248,6 +250,10 @@ def ColonyWars(hen, summarizer):
                 hen.CWDefend()
             case "5":
                 hen.CWResolveBattle()
+            case "6":
+                hen.CWCompareWithColony(input("Potential victim collony ID: "))
+            case "7":
+                hen.CWRanking(input("Show full addresses [y/n]: ") == "y")
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico())

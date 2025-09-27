@@ -14,13 +14,19 @@ Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
   - Możliwość użycia zaruwno performAction() jak i batchPerformAction()
 - Naprawa kurczaków
 - Sprawdzanie i claim zysków ze stakingu
+- Obsługa wielu portfeli i plików konfiguracyjnych (przypisanie akcji do kurczaka)
+- Obsługa akcji specjalnych (6 - 8)
+- Możliwość zmiany specjalizacji kurczaków
+- Zapisywanie wykonywanych operacji do plików - wraz z dokładną datą i godziną
+- Możliwość zmiany opłaty za transakcję (gas fee)
+- Wyświetlanie **Txn hash** - można sprawdzić transakcję na [PolygonScan](https://polygonscan.com/)
 - ‼️NOWOŚĆ‼️
-  - Obsługa wielu portfeli i plików konfiguracyjnych (przypisanie akcji do kurczaka)
-  - Obsługa akcji specjalnych (6 - 8)
-  - Możliwość zmiany specjalizacji kurczaków
-  - Zapisywanie wykonywanych operacji do plików - wraz z dokładną datą i godziną
-  - Możliwość zmiany opłaty za transakcję (gas fee)
-  - Wyświetlanie **Txn hash** - można sprawdzić transakcję na [PolygonScan](https://polygonscan.com/)
+  - **Colony Wars**
+    - Atak na kolonie
+    - Obwona koloni
+    - Rozstrzyganie bitwy
+    - Wyświetlanie podstawowych informacji o aktualnym stanie koloni i historia bitew
+    - Wyświetlanie rankingu
 
 
 ## Instalacja:
