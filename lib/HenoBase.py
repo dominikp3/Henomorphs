@@ -27,19 +27,12 @@ class HenoBase:
         self.contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
 
-        with open("abi/abi_stake.json", "r") as file:
-            self.contract_staking = self.web3.eth.contract(address=self.contract_staking_address, abi=file.read())
-
-        # with open("abi/abi_chargepod.json", "r") as file:
-        #     self.contract_chargepod = self.web3.eth.contract(address=self.contract_chargepod_address, abi=file.read())
+        self.contract_staking = DecodedContract(self.web3, self.contract_staking_address, abi_path="abi/abi_stake.json")
         self.contract_chargepod = DecodedContract(self.web3, self.contract_chargepod_address, abi_path="abi/abi_chargepod.json")
 
         if not configGenOnly:
-            with open("abi/abi_nft.json", "r") as file:
-                self.contract_nft = self.web3.eth.contract(address=self.contract_nft_address, abi=file.read())
-
-            with open("abi/abi_zico.json", "r") as file:
-                self.contract_zico = self.web3.eth.contract(address=self.contract_zico_address, abi=file.read())
+            self.contract_nft = DecodedContract(self.web3, self.contract_nft_address, abi_path="abi/abi_nft.json")
+            self.contract_zico = DecodedContract(self.web3, self.contract_zico_address, abi_path="abi/abi_zico.json")
 
         if os.path.isfile("userdata/config.json"):
             with open("userdata/config.json", "r") as file:

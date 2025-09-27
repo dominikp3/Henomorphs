@@ -17,16 +17,11 @@
 
 import socket
 from lib.FileLogger import FileLogger
-from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
 from lib.Encryption import InvalidPasswordError
 from lib.Colors import Colors
-import getpass
 import sys
 import traceback
-import os
-from lib.ConfigSelector import GetConfig
-from lib.Summarizer import Summarizer
 
 
 def except_hook(exctype, value, _):
@@ -57,7 +52,7 @@ def main():
             serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             serversocket.bind(("localhost", 4242))
             serversocket.listen(1)
-            (clientsocket, address) = serversocket.accept()
+            (clientsocket, _) = serversocket.accept()
             data = clientsocket.recv(1000)
             password = data.decode("utf-8")
             clientsocket.close()

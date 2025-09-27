@@ -95,7 +95,7 @@ def main():
         print("6) Check rewards / claim")
         print("7) Check ZICO approval")
         print("8) Change specializations")
-        print("9) Colony Wars \U0001f3ae")
+        print("9) Colony Wars \U0001f3ae\U00002694")
         print(f"42) Auto update {hConf} (add / remove tokens)")
         print("0) Exit")
         match (input("Select function: ")):
