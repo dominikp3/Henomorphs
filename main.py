@@ -54,14 +54,14 @@ def main():
     if not os.path.exists("userdata"):
         os.makedirs("userdata")
 
-    (account, hConf) = GetConfig()
+    (account, hConf, cConf) = GetConfig()
 
     if Henomorphs.IsKeySaved(account):
         try:
-            hen = Henomorphs(account, getpass.getpass("Password: "), hConf)
+            hen = Henomorphs(account, getpass.getpass("Password: "), hConf, colonyConfFile=cConf)
         except InvalidPasswordError:
             print(f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}")
-            exit()
+            exit(2)
     else:
         print(
             f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
@@ -95,7 +95,8 @@ def main():
         print("6) Check rewards / claim")
         print("7) Check ZICO approval")
         print("8) Change specializations")
-        print("42) Auto update config.json (add / remove tokens)")
+        print("9) Colony Wars \U0001f3ae\U00002694")
+        print(f"42) Auto update {hConf} (add / remove tokens)")
         print("0) Exit")
         match (input("Select function: ")):
             case "1":
@@ -117,10 +118,12 @@ def main():
                 ApproveZico(hen)
             case "8":
                 hen.ChangeSpecializations()
+            case "9":
+                ColonyWars(hen, summarizer)
             case "42":
                 print(
-                    f"{Colors.WARNING}WARNING: This function gets staked tokens from blockchain and add/remove tokens to your config.json file\n{Colors.ENDC}"
-                    + f"{Colors.WARNING}Is highly recommended to backup your current config.json file before use.{Colors.ENDC}"
+                    f"{Colors.WARNING}WARNING: This function gets staked tokens from blockchain and add/remove tokens to your {hConf} file\n{Colors.ENDC}"
+                    + f"{Colors.WARNING}Is highly recommended to backup your current {hConf} file before use.{Colors.ENDC}"
                 )
                 if input("Are you sure? [y/n]: ") == "y":
                     HenoAutoGenConfig.genConfig(hen)
@@ -219,6 +222,41 @@ def checkApproval(hen):
     ):
         print(f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.")
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
+
+
+def ColonyWars(hen, summarizer):
+    if not hen.CWIsConfigured():
+        print(f"{Colors.FAIL}Colony Wars is not configured !{Colors.ENDC}")
+        return
+
+    while True:
+        print(f"{Colors.HEADER}Select option{Colors.ENDC}")
+        print(f"{Colors.OKCYAN}1) Check status \U0001F4C3")
+        print(f"{Colors.OKCYAN}2) Check Battle History \U0001F4D6")
+        print(f"{Colors.OKCYAN}3) Attack \U00002694")
+        print(f"{Colors.OKCYAN}4) Defense \U0001f6e1")
+        print(f"{Colors.OKCYAN}5) Resolve Battle \U0001f4dc")
+        print(f"{Colors.OKCYAN}6) Compare colony battle power \U0001F94A")
+        print(f"{Colors.OKCYAN}7) Ranking \U0001F396")
+        print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
+        match (input("Select function: ")):
+            case "1":
+                hen.CWPrintStatus()
+            case "2":
+                hen.CWPrintBattleHistory()
+            case "3":
+                hen.CWAttack(input("Victim collony ID: "), float(input("Stake amount [ZICO]: ")))
+            case "4":
+                hen.CWDefend()
+            case "5":
+                hen.CWResolveBattle()
+            case "6":
+                hen.CWCompareWithColony(input("Potential victim collony ID: "))
+            case "7":
+                hen.CWRanking(input("Show full addresses [y/n]: ") == "y")
+            case "0":
+                return
+        summarizer.printSummary(hen.GetPol(), hen.GetZico())
 
 
 if __name__ == "__main__":

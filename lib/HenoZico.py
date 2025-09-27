@@ -27,22 +27,22 @@ class HenoZico(HenoBase):
 
     def GetPendingRewards(self) -> tuple[float, int]:
         data = self.contract_staking.functions.getTotalPendingRewardsForAddress(self.public_address).call()
-        return (data[0] / 1000000000000000000, data[1])
+        return (data[0] / self.ZicoDividor, data[1])
 
     def GetPol(self) -> float:
-        return self.web3.eth.get_balance(self.public_address) / 1000000000000000000
+        return self.web3.eth.get_balance(self.public_address) / self.ZicoDividor
 
     def GetZico(self) -> float:
-        return self.contract_zico.functions.balanceOf(self.public_address).call() / 1000000000000000000
+        return self.contract_zico.functions.balanceOf(self.public_address).call() / self.ZicoDividor
 
     def GetZicoApproval(self, spender) -> float:
-        return self.contract_zico.functions.allowance(self.public_address, spender).call() / 1000000000000000000
+        return self.contract_zico.functions.allowance(self.public_address, spender).call() / self.ZicoDividor
 
     def ApproveZico(self, spender, value):
         def _ApproveZico(*_):
             print(f"Approving ZICO ({spender}, {value}):", end=" ", flush=True)
             self.logger.log(f"Approving ZICO ({spender}, {value})")
-            self.Transaction(self.contract_zico.functions.approve(spender, value * 1000000000000000000))
+            self.Transaction(self.contract_zico.functions.approve(spender, value * self.ZicoDividor))
             self.printSuccessMessage()
 
         if value < 0:

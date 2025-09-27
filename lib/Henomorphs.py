@@ -1,3 +1,4 @@
+from lib.ColonyWars import ColonyWars
 from lib.HenoActions import HenoActions
 from lib.HenoInspect import HenoInspect
 from lib.HenoPrint import HenoPrint
@@ -6,5 +7,5 @@ from lib.HenoSpec import HenoSpec
 from lib.HenoZico import HenoZico
 
 
-class Henomorphs(HenoPrint, HenoInspect, HenoActions, HenoRepair, HenoZico, HenoSpec):
+class Henomorphs(HenoPrint, HenoInspect, HenoActions, HenoRepair, HenoZico, HenoSpec, ColonyWars):
     pass
