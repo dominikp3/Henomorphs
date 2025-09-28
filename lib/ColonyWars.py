@@ -111,6 +111,20 @@ class ColonyWars(HenoBase):
                 a.append(i)
         return a
 
+    def CWPrintCurrentBattles(self):
+        d = self.CWGetUnresolvedBattles()
+        for i in d:
+            snapshot = self.contract_chargepod.functions.getBattleSnapshot(i["battleId"]).call()
+            i["battleStartTime"] = datetime.fromtimestamp(int(i["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
+            i["battleId"] = self.bToHex(i["battleId"])
+            i["opponent"] = self.bToHex(i["opponent"])
+            i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
+            i["isAttackerDefend"] = (len(snapshot[1]) != 0)
+            i["snapshot"] = snapshot
+            i["TotalAttackerPower"] = sum(snapshot[0]) 
+            i["TotalDefenderPower"] = sum(snapshot[1]) 
+        print(self.DictToPrettyString(d))
+
     def CWSelectBattle(self, battles):
         battle = None
 
