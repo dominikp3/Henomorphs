@@ -119,11 +119,54 @@ class ColonyWars(HenoBase):
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
             i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
-            i["isAttackerDefend"] = (len(snapshot[1]) != 0)
+            i["isAttackerDefend"] = len(snapshot[1]) != 0
             i["snapshot"] = snapshot
-            i["TotalAttackerPower"] = sum(snapshot[0]) 
-            i["TotalDefenderPower"] = sum(snapshot[1]) 
+            i["TotalAttackerPower"] = sum(snapshot[0])
+            i["TotalDefenderPower"] = sum(snapshot[1])
         print(self.DictToPrettyString(d))
+
+    def CWPrintWeatherForecast(self):
+        battlefieldWeather = self.contract_chargepod.call_decoded("getBattlefieldWeather")
+        weatherAdvantage = self.contract_chargepod.call_decoded("checkWeatherAdvantage")
+        weatherForecast = self.contract_chargepod.call_decoded("getWeatherForecast")
+        weatherForecast["timeUntilChange"] = self.secondsToHMS(weatherForecast["timeUntilChange"])
+
+        match (battlefieldWeather["weatherType"]):
+            case 0:  # Clear
+                weather_icon = "\U00002600"
+            case 1:  # Storm
+                weather_icon = "\U0001F329"
+            case 2:  # Fog
+                weather_icon = "\U0001f32b"
+            case 3:  # Wind
+                weather_icon = "\U0001F343" 
+            case 4:  # Rain
+                weather_icon = "\U0001f327"
+            case _:  # Malfunction
+                weather_icon = "\U00002753"
+
+        match (weatherAdvantage["favorType"]):
+            case 0:
+                favours = "favours attackers"
+            case 1:
+                favours = "favours defenders"
+            case 2:
+                favours = "is neutral"
+            case _:
+                favours = f"<Unknown>"
+
+        print(
+            f"{Colors.OKBLUE}Battlefield weather:{Colors.ENDC}\n"
+            + f"{battlefieldWeather["weatherName"]} {weather_icon}\n"
+            + f"Attacker Mod: {battlefieldWeather["attackerMod"]}%\n"
+            + f"Defender Mod: {battlefieldWeather["defenderMod"]}%\n"
+            + f"Weather {favours}, {weatherAdvantage["advantage"]}% advantage."
+        )
+        print(
+            f"{Colors.OKBLUE}Weather Forecast:{Colors.ENDC}\n"
+            + f"Current: {weatherForecast["current"]}\n"
+            + f"Prognosed: {weatherForecast["next"]} in {weatherForecast["timeUntilChange"]}\n"
+        )
 
     def CWSelectBattle(self, battles):
         battle = None
