@@ -239,6 +239,7 @@ def ColonyWars(hen, summarizer):
         print(f"{Colors.OKCYAN}6) Compare colony battle power \U0001F94A")
         print(f"{Colors.OKCYAN}7) Ranking \U0001F396")
         print(f"{Colors.OKCYAN}8) Check Current Battles \U0001F4D6")
+        print(f"{Colors.OKCYAN}9) Check Weather Forecast \U000026C5")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -257,6 +258,8 @@ def ColonyWars(hen, summarizer):
                 hen.CWRanking(input("Show full addresses [y/n]: ") == "y")
             case "8":
                 hen.CWPrintCurrentBattles()
+            case "9":
+                hen.CWPrintWeatherForecast()
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico())
