@@ -27,6 +27,8 @@ class HenoZico(HenoBase):
 
     def GetPendingRewards(self) -> tuple[float, int]:
         data = self.contract_staking.functions.getTotalPendingRewardsForAddress(self.public_address).call()
+        if data[1] >= 50: # Workaround for bug in smart contract: getTotalPendingRewardsForAddress() return valid count for max 50 chicks 
+            data[1] = len(self.contract_staking.functions.getStakedTokensByAddress(self.public_address).call())
         return (data[0] / self.ZicoDividor, data[1])
 
     def GetPol(self) -> float:
