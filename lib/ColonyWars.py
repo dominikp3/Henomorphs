@@ -41,12 +41,17 @@ class ColonyWars(HenoBase):
     def CWPrintStatus(self):
         d = self.contract_chargepod.call_decoded("getColonyStrategicOverview", self.colony["Colony"])
         d2 = self.contract_chargepod.call_decoded("getColonyCombatRank", self.colony["Season"], self.colony["Colony"])
+        # Cooldowns: attack, raid, siege, betrayal
         print(
             f"canAttack: {self.GetColoredBool(d["readiness"]["canAttack"])}\n"
             + f"canDefend: {self.GetColoredBool(d["readiness"]["canDefend"])}\n"
             + f"canSiege: {self.GetColoredBool(d["readiness"]["canSiege"])}\n"
             + f"canRaid: {self.GetColoredBool(d["readiness"]["canRaid"])}\n"
-            + f"Cooldown: {self.secondsToHMS(max(d["readiness"]["cooldowns"]))}\n"
+            + f"Cooldowns:\n"
+            + f"\tAttack: {self.secondsToHMS(d["readiness"]["cooldowns"][0])}\n"
+            + f"\tRaid: {self.secondsToHMS(d["readiness"]["cooldowns"][1])}\n"
+            + f"\tSiege: {self.secondsToHMS(d["readiness"]["cooldowns"][2])}\n"
+            + f"\tBetrayal: {self.secondsToHMS(d["readiness"]["cooldowns"][3])}\n"
             + f"defensiveStake: {d["defensiveStake"] / self.ZicoDividor}\n"
             + f"territoriesCount: {d["territoriesCount"]}\n"
             + f"inAlliance: {self.GetColoredBool(d["inAlliance"])}\n\n"
@@ -135,11 +140,11 @@ class ColonyWars(HenoBase):
             case 0:  # Clear
                 weather_icon = "\U00002600"
             case 1:  # Storm
-                weather_icon = "\U0001F329"
+                weather_icon = "\U0001f329"
             case 2:  # Fog
                 weather_icon = "\U0001f32b"
             case 3:  # Wind
-                weather_icon = "\U0001F343" 
+                weather_icon = "\U0001f343"
             case 4:  # Rain
                 weather_icon = "\U0001f327"
             case _:  # Malfunction
@@ -206,7 +211,8 @@ class ColonyWars(HenoBase):
             return
 
         cd = self.contract_chargepod.functions.getCombatCooldowns(self.colony["Colony"]).call()
-        if max(cd) > 0:
+        # 0 - attack cooldown
+        if cd[0] > 0:
             print(f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(max(cd))}{Colors.ENDC}")
             self.logger.log("ERROR: Collony in cooldown preiod!")
             return
@@ -271,18 +277,6 @@ class ColonyWars(HenoBase):
             self.delay()
 
         self.TryAction(_Resolve, None)
-
-    def CallWithoutCrash(self, func, arg=None):
-        try:
-            func(arg)
-        except Exception as e:
-            estr = "".join(traceback.format_exception(e))
-            print(f"{Colors.FAIL}{estr}{Colors.ENDC}")
-            try:
-                self.logger.log(f"Error:\n{estr}")
-            except:
-                pass
-            pass
 
     def CWAIDefender(self):
         print(f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}")

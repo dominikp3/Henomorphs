@@ -97,6 +97,9 @@ def main():
         print("8) Change specializations")
         print("9) Colony Wars \U0001f3ae\U00002694")
         print(f"42) Auto update {hConf} (add / remove tokens)")
+        if hen.debug_mode:
+            print("101) Custom Read")
+            print("102) Custom Write")
         print("0) Exit")
         match (input("Select function: ")):
             case "1":
@@ -127,6 +130,10 @@ def main():
                 )
                 if input("Are you sure? [y/n]: ") == "y":
                     HenoAutoGenConfig.genConfig(hen)
+            case "101":
+                hen.TestCustomRead(hen.SelectContract(), input("Function: "), hen.InputMultipleArgs())
+            case "102":
+                hen.TestCustomWrite(hen.SelectContract(), input("Function: "), hen.InputMultipleArgs())
             case "0":
                 exit()
         summarizer.printSummary(hen.GetPol(), hen.GetZico())

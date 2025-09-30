@@ -216,10 +216,65 @@ class HenoBase:
 
     def shortAddr(self, strHexAdr):
         return f"{strHexAdr[0:6]}...{strHexAdr[-4:]}"
-    
+
     def DictToPrettyString(self, dict, colorBool=True):
         s = pformat(dict, sort_dicts=False)
         if colorBool:
             s = s.replace("True", f"{Colors.OKGREEN}True{Colors.ENDC}")
             s = s.replace("False", f"{Colors.FAIL}False{Colors.ENDC}")
         return s
+
+    def CallWithoutCrash(self, func, arg=None):
+        try:
+            func(arg)
+        except Exception as e:
+            estr = "".join(traceback.format_exception(e))
+            print(f"{Colors.FAIL}{estr}{Colors.ENDC}")
+            try:
+                self.logger.log(f"Error:\n{estr}")
+            except:
+                pass
+            pass
+
+    def SelectContract(self):
+        print("1) contract_chargepod")
+        print("2) contract_staking")
+        c = None
+        match (input("Select contract: ")):
+            case "1":
+                c = self.contract_chargepod
+            case "2":
+                c = self.contract_staking
+        return c
+
+    def InputMultipleArgs(self) -> list:
+        n = int(input("Number of args: "))
+        l = []
+        for i in range(n):
+            a = input(f"Arg{i}: ")
+            try:
+                a = eval(a)
+            except:
+                pass
+            l.append(a)
+        return l
+
+    def TestCustomRead(self, contract: DecodedContract, func: str, args: list):
+        def _Read(_):
+            print(self.DictToPrettyString(contract.call_decoded(func, *args)))
+
+        self.CallWithoutCrash(_Read)
+
+    def TestCustomWrite(self, contract: DecodedContract, func: str, args: list):
+        def _Write(*_):
+            print(
+                "Calling function: ",
+                end=" ",
+                flush=True,
+            )
+            fn = getattr(contract.functions, func)
+            self.Transaction(fn(*args))
+            self.printSuccessMessage()
+            self.delay()
+
+        self.TryAction(_Write, None)
