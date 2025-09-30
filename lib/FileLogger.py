@@ -8,7 +8,7 @@ class FileLogger:
             self.instance = super(FileLogger, self).__new__(self)
             self.enabled = False
         if dir is not None and enabled is not None:
-            self.path = f"{dir}{datetime.now().strftime("%d_%m_%Y")}.log"
+            self.dir = dir
             self.enabled = enabled
             if enabled and not os.path.exists(dir):
                 os.makedirs(dir)
@@ -16,5 +16,6 @@ class FileLogger:
 
     def log(self, str):
         if self.enabled:
+            self.path = f"{self.dir}{datetime.now().strftime("%d_%m_%Y")}.log"
             with open(self.path, "a", encoding="utf8") as file:
                 file.write(f"{datetime.now().strftime("%d.%m.%Y %H:%M:%S")}  {str}\n")
