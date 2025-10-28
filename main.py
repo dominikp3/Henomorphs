@@ -58,9 +58,13 @@ def main():
 
     if Henomorphs.IsKeySaved(account):
         try:
-            hen = Henomorphs(account, getpass.getpass("Password: "), hConf, colonyConfFile=cConf)
+            hen = Henomorphs(
+                account, getpass.getpass("Password: "), hConf, colonyConfFile=cConf
+            )
         except InvalidPasswordError:
-            print(f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}")
+            print(
+                f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}"
+            )
             exit(2)
     else:
         print(
@@ -80,7 +84,7 @@ def main():
             Henomorphs(account, password, hConf, True)
         exit()
 
-    summarizer = Summarizer(hen.GetPol(), hen.GetZico())
+    summarizer = Summarizer(hen.GetPol(), hen.GetZico(), hen.GetYlw())
     while True:
         print(f"{Colors.HEADER}Henomorphs Python{Colors.ENDC}{Colors.OKCYAN}")
         print("-" * 50)
@@ -114,9 +118,9 @@ def main():
                 hen.RepairChargeSequence()
             case "6":
                 rewards = hen.GetPendingRewards()
-                print(f"Pending rewards: {rewards[0]}, tokens: {rewards[1]}")
+                hen.printPendingRewards(rewards)
                 if input("Claim? [y/n]: ") == "y":
-                    hen.ClaimAll(rewards[1])
+                    hen.ClaimAll(rewards["stakedCount"])
             case "7":
                 ApproveZico(hen)
             case "8":
@@ -131,12 +135,16 @@ def main():
                 if input("Are you sure? [y/n]: ") == "y":
                     HenoAutoGenConfig.genConfig(hen)
             case "101":
-                hen.TestCustomRead(hen.SelectContract(), input("Function: "), hen.InputMultipleArgs())
+                hen.TestCustomRead(
+                    hen.SelectContract(), input("Function: "), hen.InputMultipleArgs()
+                )
             case "102":
-                hen.TestCustomWrite(hen.SelectContract(), input("Function: "), hen.InputMultipleArgs())
+                hen.TestCustomWrite(
+                    hen.SelectContract(), input("Function: "), hen.InputMultipleArgs()
+                )
             case "0":
                 exit()
-        summarizer.printSummary(hen.GetPol(), hen.GetZico())
+        summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
 
 
 def PerformAction(hen):
@@ -196,8 +204,12 @@ def RepairWear(hen):
 
     while True:
         print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}")
-        print(f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}")
+        print(
+            f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}"
+        )
+        print(
+            f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}"
+        )
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         if _match(input("Select function: ")):
             return
@@ -206,9 +218,15 @@ def RepairWear(hen):
 def ApproveZico(hen):
     while True:
         print(f"{Colors.HEADER}Select contract address{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) - Inspection ({hen.GetZicoApproval(hen.contract_nft_address)})")
-        print(f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) - Actions, Repair charge ({hen.GetZicoApproval(hen.contract_chargepod_address)})")
-        print(f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) - Repair Wear ({hen.GetZicoApproval(hen.contract_staking_address)})")
+        print(
+            f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) - Inspection ({hen.GetZicoApproval(hen.contract_nft_address)})"
+        )
+        print(
+            f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) - Actions, Repair charge ({hen.GetZicoApproval(hen.contract_chargepod_address)})"
+        )
+        print(
+            f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) - Repair Wear ({hen.GetZicoApproval(hen.contract_staking_address)})"
+        )
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -227,7 +245,9 @@ def checkApproval(hen):
         or hen.GetZicoApproval(hen.contract_chargepod_address) <= 50
         or hen.GetZicoApproval(hen.contract_staking_address) <= 50
     ):
-        print(f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.")
+        print(
+            f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors."
+        )
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 
 
@@ -238,15 +258,15 @@ def ColonyWars(hen, summarizer):
 
     while True:
         print(f"{Colors.HEADER}Select option{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}1) Check status \U0001F4C3")
-        print(f"{Colors.OKCYAN}2) Check Battle History \U0001F4D6")
+        print(f"{Colors.OKCYAN}1) Check status \U0001f4c3")
+        print(f"{Colors.OKCYAN}2) Check Battle History \U0001f4d6")
         print(f"{Colors.OKCYAN}3) Attack \U00002694")
         print(f"{Colors.OKCYAN}4) Defense \U0001f6e1")
         print(f"{Colors.OKCYAN}5) Resolve Battle \U0001f4dc")
-        print(f"{Colors.OKCYAN}6) Compare colony battle power \U0001F94A")
-        print(f"{Colors.OKCYAN}7) Ranking \U0001F396")
-        print(f"{Colors.OKCYAN}8) Check Current Battles \U0001F4D6")
-        print(f"{Colors.OKCYAN}9) Check Weather Forecast \U000026C5")
+        print(f"{Colors.OKCYAN}6) Compare colony battle power \U0001f94a")
+        print(f"{Colors.OKCYAN}7) Ranking \U0001f396")
+        print(f"{Colors.OKCYAN}8) Check Current Battles \U0001f4d6")
+        print(f"{Colors.OKCYAN}9) Check Weather Forecast \U000026c5")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -254,7 +274,9 @@ def ColonyWars(hen, summarizer):
             case "2":
                 hen.CWPrintBattleHistory()
             case "3":
-                hen.CWAttack(input("Victim collony ID: "), float(input("Stake amount [ZICO]: ")))
+                hen.CWAttack(
+                    input("Victim collony ID: "), float(input("Stake amount [ZICO]: "))
+                )
             case "4":
                 hen.CWDefend()
             case "5":
@@ -269,7 +291,7 @@ def ColonyWars(hen, summarizer):
                 hen.CWPrintWeatherForecast()
             case "0":
                 return
-        summarizer.printSummary(hen.GetPol(), hen.GetZico())
+        summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
 
 
 if __name__ == "__main__":
