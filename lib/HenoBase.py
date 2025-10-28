@@ -28,6 +28,7 @@ class HenoBase:
         self.contract_staking_address = "0xA16C7963be1d90006A1D36c39831052A89Bc97BE"
         self.contract_nft_address = "0xCEaA5d6418198D827279313f0765d67d3ac4D61f"
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
+        self.contract_ylw_address = "0x79e60C812161eBcAfF14b1F06878c6Be451CD3Ef"
 
         self.contract_staking = DecodedContract(self.web3, self.contract_staking_address, abi_path="abi/abi_stake.json")
         self.contract_chargepod = DecodedContract(self.web3, self.contract_chargepod_address, abi_path="abi/abi_chargepod.json")
@@ -35,6 +36,7 @@ class HenoBase:
         if not configGenOnly:
             self.contract_nft = DecodedContract(self.web3, self.contract_nft_address, abi_path="abi/abi_nft.json")
             self.contract_zico = DecodedContract(self.web3, self.contract_zico_address, abi_path="abi/abi_zico.json")
+            self.contract_ylw = DecodedContract(self.web3, self.contract_ylw_address, abi_path="abi/abi_ylw.json")
 
         if os.path.isfile("userdata/config.json"):
             with open("userdata/config.json", "r") as file:
