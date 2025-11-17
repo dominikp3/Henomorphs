@@ -135,7 +135,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     // Mnożnik do modyfikacji opłaty gas fee. (domyślnie 1)
     // Ustawienie na wyższą wartość (np: 1.2) może zmniejszyć prawdopodobieństwo wystąpienia błędu i przyspieszyć transakcje
 
-    "gas_max_total": (number),
+    "gas_max_total": (number), // gwei
     // Maksymalna całkowita wartość opłaty za gas (ogranicza maxFeePerGas) (domyślnie -1)
     // W przypadku gdy opłata sugerowana przez sieć jest wyższa niż skonfigurowana tutaj
     // zostanie ona ograniczona do podanej wartości.
@@ -143,7 +143,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     // UWAGA: W przypadku dużego obciążenia sieci i niskiej opłaty przetwarzanie transakcji może potrwać długo lub transakcja się nie powiedzie.
     // Wartość gas_max_total powinna być większa niż gas_max_priority
 
-    "gas_max_priority": (number),
+    "gas_max_priority": (number), // gwei
     // Maksymalna wartość opłaty priorytetowej / 'napiwek dla górników' (ogranicza maxPriorityFeePerGas) (domyślnie -1)
     // W przypadku gdy opłata sugerowana przez sieć jest wyższa niż skonfigurowana tutaj
     // zostanie ona ograniczona do podanej wartości.
