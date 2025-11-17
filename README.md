@@ -20,13 +20,15 @@ Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 - Zapisywanie wykonywanych operacji do plików - wraz z dokładną datą i godziną
 - Możliwość zmiany opłaty za transakcję (gas fee)
 - Wyświetlanie **Txn hash** - można sprawdzić transakcję na [PolygonScan](https://polygonscan.com/)
-- ‼️NOWOŚĆ‼️
-  - **Colony Wars**
-    - Atak na kolonie
-    - Obwona koloni
-    - Rozstrzyganie bitwy
-    - Wyświetlanie podstawowych informacji o aktualnym stanie koloni i historia bitew
-    - Wyświetlanie rankingu
+- **Colony Wars**
+  - Atak na kolonie
+  - Obwona koloni
+  - Rozstrzyganie bitwy
+  - Wyświetlanie podstawowych informacji o aktualnym stanie koloni i historia bitew
+  - Wyświetlanie rankingu
+- **‼️NOWOŚĆ‼️**
+  - Funkcja ustawienia maksymalnej opłaty w ```config.json``` **[BETA]**
+  - Dekodowanie ContractCustomError i wyświetlanie komunikatu w formie czytelnej dla człowieka **[BETA]**
 
 
 ## Instalacja:
@@ -132,6 +134,22 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     "gas_mul": (number),
     // Mnożnik do modyfikacji opłaty gas fee. (domyślnie 1)
     // Ustawienie na wyższą wartość (np: 1.2) może zmniejszyć prawdopodobieństwo wystąpienia błędu i przyspieszyć transakcje
+
+    "gas_max_total": (number),
+    // Maksymalna całkowita wartość opłaty za gas (ogranicza maxFeePerGas) (domyślnie -1)
+    // W przypadku gdy opłata sugerowana przez sieć jest wyższa niż skonfigurowana tutaj
+    // zostanie ona ograniczona do podanej wartości.
+    // Jeśli ustawiono mniejszą niż 0 - funkcja wyłączona
+    // UWAGA: W przypadku dużego obciążenia sieci i niskiej opłaty przetwarzanie transakcji może potrwać długo lub transakcja się nie powiedzie.
+    // Wartość gas_max_total powinna być większa niż gas_max_priority
+
+    "gas_max_priority": (number),
+    // Maksymalna wartość opłaty priorytetowej / 'napiwek dla górników' (ogranicza maxPriorityFeePerGas) (domyślnie -1)
+    // W przypadku gdy opłata sugerowana przez sieć jest wyższa niż skonfigurowana tutaj
+    // zostanie ona ograniczona do podanej wartości.
+    // Jeśli ustawiono mniejszą niż 0 - funkcja wyłączona
+    // UWAGA: W przypadku dużego obciążenia sieci i niskiej opłaty przetwarzanie transakcji może potrwać długo lub transakcja się nie powiedzie.
+    // Wartość gas_max_priority powinna być mniejsza niż gas_max_total
 
     "repair_wear": { // Konfiguracja naprawy wear
       "threshold": (integer),

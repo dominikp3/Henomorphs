@@ -14,13 +14,16 @@ import jsonschema
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.ConfigSchema import config_schema, heno_config_schema, colony_config_schema
 from lib.FileLogger import FileLogger
+from web3.exceptions import ContractCustomError
 
 
 class HenoBase:
     ChickChar = "\U0001f425"
     ZicoDividor = 1000000000000000000
 
-    def __init__(self, account, password, henoConfFile, configGenOnly=False, colonyConfFile=None):
+    def __init__(
+        self, account, password, henoConfFile, configGenOnly=False, colonyConfFile=None
+    ):
         self.web3 = Web3()
         self.web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
@@ -30,20 +33,34 @@ class HenoBase:
         self.contract_zico_address = "0x486ebcFEe0466Def0302A944Bd6408cD2CB3E806"
         self.contract_ylw_address = "0x79e60C812161eBcAfF14b1F06878c6Be451CD3Ef"
 
-        self.contract_staking = DecodedContract(self.web3, self.contract_staking_address, abi_path="abi/abi_stake.json")
-        self.contract_chargepod = DecodedContract(self.web3, self.contract_chargepod_address, abi_path="abi/abi_chargepod.json")
+        self.contract_staking = DecodedContract(
+            self.web3, self.contract_staking_address, abi_path="abi/abi_stake.json"
+        )
+        self.contract_chargepod = DecodedContract(
+            self.web3,
+            self.contract_chargepod_address,
+            abi_path="abi/abi_chargepod.json",
+        )
 
         if not configGenOnly:
-            self.contract_nft = DecodedContract(self.web3, self.contract_nft_address, abi_path="abi/abi_nft.json")
-            self.contract_zico = DecodedContract(self.web3, self.contract_zico_address, abi_path="abi/abi_zico.json")
-            self.contract_ylw = DecodedContract(self.web3, self.contract_ylw_address, abi_path="abi/abi_ylw.json")
+            self.contract_nft = DecodedContract(
+                self.web3, self.contract_nft_address, abi_path="abi/abi_nft.json"
+            )
+            self.contract_zico = DecodedContract(
+                self.web3, self.contract_zico_address, abi_path="abi/abi_zico.json"
+            )
+            self.contract_ylw = DecodedContract(
+                self.web3, self.contract_ylw_address, abi_path="abi/abi_ylw.json"
+            )
 
         if os.path.isfile("userdata/config.json"):
             with open("userdata/config.json", "r") as file:
                 self.config = json.load(file)
                 jsonschema.validate(instance=self.config, schema=config_schema)
         else:
-            print(f"{Colors.WARNING}No config.json file found! Using default config.{Colors.ENDC}")
+            print(
+                f"{Colors.WARNING}No config.json file found! Using default config.{Colors.ENDC}"
+            )
             self.config = {}
 
         self.max_transaction_attempts = self.config.get("max_transaction_attempts", 5)
@@ -51,9 +68,13 @@ class HenoBase:
         self.delay_t = self.config.get("delay", 3)
         self.delay_ai_defender = self.config.get("ai_defender_delay", 600)
         if self.random_action_on_fail >= self.max_transaction_attempts:
-            raise Exception("random_action_on_fail must be smaller than max_transaction_attempts")
+            raise Exception(
+                "random_action_on_fail must be smaller than max_transaction_attempts"
+            )
         self.debug_mode = self.config.get("debug", False)
-        self.logger = FileLogger(f"userdata/logs/{account}", self.config.get("log", False))
+        self.logger = FileLogger(
+            f"userdata/logs/{account}", self.config.get("log", False)
+        )
         self.node_url = self.config.get("rpc", "https://polygon-rpc.com")
 
         self.web3.provider = Web3.HTTPProvider(self.node_url)
@@ -74,17 +95,27 @@ class HenoBase:
             print("-" * 50)
         else:
             print("-" * 50)
-            print(f"{Colors.FAIL}Connection Failed\n Ensure that rpc ({self.node_url}) works or use different one.{Colors.ENDC}")
+            print(
+                f"{Colors.FAIL}Connection Failed\n Ensure that rpc ({self.node_url}) works or use different one.{Colors.ENDC}"
+            )
             print("-" * 50)
             raise Exception("Connection Failed")
 
         self.logger.log("-" * 100)
-        self.logger.log(f"Successfully logged in: {self.public_address}, using config: '{henoConfFile}'")
+        self.logger.log(
+            f"Successfully logged in: {self.public_address}, using config: '{henoConfFile}'"
+        )
 
         self.henoConfPath = f"userdata/{account}{henoConfFile}"
-        self.colonyConfPath = f"userdata/{account}{colonyConfFile}" if colonyConfFile is not None else None
+        self.colonyConfPath = (
+            f"userdata/{account}{colonyConfFile}"
+            if colonyConfFile is not None
+            else None
+        )
         if configGenOnly or not os.path.isfile(self.henoConfPath):
-            print(f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}")
+            print(
+                f"{Colors.WARNING}No {henoConfFile} file found! Trying to generate one...{Colors.ENDC}"
+            )
             self.logger.log(f"No {henoConfFile} file found! Trying to generate one...")
             self.tokens = []
             HenoAutoGenConfig.genConfig(self)
@@ -137,8 +168,22 @@ class HenoBase:
                 if self.debug_mode:
                     print(f"Increasing {s}: {v} -> {call_function[s]}")
 
-            for i in ["gas", "maxPriorityFeePerGas", "maxFeePerGas"]:
+            # "gas"
+            for i in ["maxPriorityFeePerGas", "maxFeePerGas"]:
                 mul(i)
+
+        def clamp_gas(callParam, confParam):
+            if (m := self.config.get(confParam, -1)) >= 0:
+                m_wei = int(m * 1000000000)
+                call_function[callParam] = min(call_function[callParam], m_wei)
+                if self.debug_mode:
+                    print(f"{callParam} after clamp: {call_function[callParam]}")
+
+        for i, j in [
+            ("maxPriorityFeePerGas", "gas_max_priority"),
+            ("maxFeePerGas", "gas_max_total"),
+        ]:
+            clamp_gas(i, j)
 
         if (d := self.config.get("dummy", 0)) > 0:
             if d == 1:
@@ -147,7 +192,9 @@ class HenoBase:
                 raise Exception("Transaction failed")
 
         # Sign transaction
-        signed_tx = self.web3.eth.account.sign_transaction(call_function, private_key=self.private_key)
+        signed_tx = self.web3.eth.account.sign_transaction(
+            call_function, private_key=self.private_key
+        )
 
         # Send transaction
         send_tx = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
@@ -174,6 +221,8 @@ class HenoBase:
             except Exception as e:
                 print(f"{Colors.FAIL}[Error]")
                 print(f"{type(e).__name__}: {e}")
+                if isinstance(e, ContractCustomError):
+                    print(self.decode_contract_error(e.data))
                 self.logger.log(f"Transaction failed: {type(e).__name__}: {e}")
                 if self.debug_mode:
                     print(Colors.FAIL, end="")
@@ -189,6 +238,18 @@ class HenoBase:
 
     def delay(self):
         time.sleep(self.delay_t)
+
+    def decode_contract_error(self, error_data: str) -> str:
+        for c in [
+            self.contract_staking,
+            self.contract_chargepod,
+            self.contract_nft,
+            self.contract_zico,
+            self.contract_ylw,
+        ]:
+            if decoded := c.decode_contract_error(error_data):
+                return str(decoded)
+        return "Unable to decode error data!"
 
     # 0 - ask, 1 - sequence, 2 - batch
     def GetConfigAlgorithm(self, n: str) -> int:

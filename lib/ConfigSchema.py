@@ -26,6 +26,8 @@ config_schema = {
         "print_tx_hash": {"type": "boolean"},
         "print_priv_key": {"type": "boolean"},
         "gas_mul": {"type": "number", "minimum": 0.5},
+        "gas_max_total": {"type": "number"},
+        "gas_max_priority": {"type": "number"},
         "repair_wear": {"$ref": "#/definitions/repair"},
         "repair_charge": {"$ref": "#/definitions/repair"},
         "algorithms": {
@@ -76,7 +78,7 @@ colony_config_schema = {
                         "minItems": 2,
                         "items": {"type": "integer", "minimum": 0},
                     },
-                    "name": {"type": "string"}
+                    "name": {"type": "string"},
                 },
             },
         },

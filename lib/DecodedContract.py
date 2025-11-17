@@ -1,9 +1,13 @@
 import json
 from web3 import Web3
+from eth_utils import keccak
+import eth_abi
 
 
 class DecodedContract:
-    def __init__(self, web3: Web3, address: str, abi_path: str = None, abi_data: dict = None):
+    def __init__(
+        self, web3: Web3, address: str, abi_path: str = None, abi_data: dict = None
+    ):
         if abi_path:
             with open(abi_path, "r") as file:
                 self.abi = json.load(file)
@@ -31,7 +35,12 @@ class DecodedContract:
         elif abi_output["type"].endswith("[]"):
             base_type = abi_output["type"][:-2]
             if base_type == "tuple":
-                return [self._parse_output({"type": "tuple", "components": abi_output["components"]}, item) for item in value]
+                return [
+                    self._parse_output(
+                        {"type": "tuple", "components": abi_output["components"]}, item
+                    )
+                    for item in value
+                ]
             else:
                 return list(value)
         else:
@@ -68,3 +77,46 @@ class DecodedContract:
         fn = getattr(self.contract.functions, function_name)
         raw_result = fn(*args).call(**kwargs)
         return self.decode_result(function_name, raw_result)
+
+    def decode_contract_error(self, error_data: str) -> dict | None:
+        """
+        Decode custom error
+
+        Args:
+            error_data: str — hex error code as string (eg. "0x12345678...")
+
+        Returns:
+            dict: {
+                'name': str,
+                'args': dict,
+                'signature': str,
+            }
+            or None
+        """
+
+        if not error_data or not error_data.startswith("0x"):
+            raise ValueError("Invalid error data")
+
+        # 4-bajtowy selector błędu
+        selector = bytes.fromhex(error_data[2:10])
+        data = bytes.fromhex(error_data[10:])
+
+        # Szukamy błędu w ABI kontraktu
+        for item in self.contract.abi:
+            if item.get("type") == "error":
+                sig = f"{item['name']}({','.join(i['type'] for i in item['inputs'])})"
+                sig_hash = keccak(text=sig)[:4]
+                # print(f"{sig} => {sig_hash.hex()}")
+                if sig_hash == selector:
+                    # Dekodujemy argumenty
+                    types = [i["type"] for i in item["inputs"]]
+                    names = [i["name"] for i in item["inputs"]]
+                    decoded_values = eth_abi.decode(types, data)
+
+                    return {
+                        "name": item["name"],
+                        "args": dict(zip(names, decoded_values)),
+                        "signature": sig,
+                    }
+
+        return None  # nie znaleziono błędu
