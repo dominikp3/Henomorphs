@@ -58,7 +58,7 @@ def main():
         print("-" * 50)
         summarizer.printBalances()
         print("-" * 50, end=f"\n{Colors.ENDC}")
-        checkApproval(hen)
+        # checkApproval(hen)
         print("1) Display info")
         print("2) Inspect")
         print("3) Perform Action")
