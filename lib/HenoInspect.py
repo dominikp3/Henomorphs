@@ -10,7 +10,7 @@ class HenoInspect(HenoBase):
         def _Inspect(_, p):
             print("Performing core Inspection: ", end=" ", flush=True)
             self.logger.log(f"Performing core Inspection for tokens: {str([{"CollectionID": p[0][i], "TokenID": p[1][i]} for i in range(len(p[0]))])}")
-            self.Transaction(self.contract_nft.functions.inspect(p[0], p[1]))
+            self.Transaction(self.contract_chargepod.functions.inspect(p[0], p[1]))
             self.printSuccessMessage()
 
         tokensToInspect = [[], []]

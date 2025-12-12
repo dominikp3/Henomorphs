@@ -20,16 +20,29 @@ class HenoRepair(HenoBase):
         (threshold, reduction) = self._get_repair_params("repair_wear")
 
         def _RepairWear(_, t):
-            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
-                print(f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}", end=" ", flush=True)
-                self.logger.log(f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}")
-                self.Transaction(self.contract_staking.functions.repairTokenWear(int(t["CollectionID"]), int(t["TokenID"]), int(r)))
+                print(
+                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}",
+                    end=" ",
+                    flush=True,
+                )
+                self.logger.log(
+                    f"Performing wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}"
+                )
+                self.Transaction(
+                    self.contract_staking.functions.repairTokenWear(
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                    )
+                )
                 self.printSuccessMessage()
-                self.delay()
             else:
-                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear. ({data[2]}){Colors.ENDC}")
+                print(
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear. ({data[2]}){Colors.ENDC}"
+                )
 
         for t in self.tokens:
             self.TryAction(_RepairWear, t)
@@ -47,15 +60,21 @@ class HenoRepair(HenoBase):
         }
 
         def _prepare_data(t):
-            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
             if int(data[2]) >= int(threshold) and int(data[2]) > 0:
                 r = min(reduction, int(data[2]))
-                print(f"Wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}")
+                print(
+                    f"Wear repair: ({t['CollectionID']}, {t['TokenID']}), Reduction: {r}"
+                )
                 repairData["collectionIds"].append(t["CollectionID"])
                 repairData["tokenIds"].append(t["TokenID"])
                 repairData["repairAmounts"].append(r)
             else:
-                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear. ({data[2]}){Colors.ENDC}")
+                print(
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair wear. ({data[2]}){Colors.ENDC}"
+                )
 
         def _batch_repair(*_):
             print("Performing batch wear repair: ", end=" ", flush=True)
@@ -63,9 +82,10 @@ class HenoRepair(HenoBase):
                 "Performing batch wear repair for tokens: "
                 + f"{str([{"CollectionID": repairData["collectionIds"][i], "TokenID": repairData["tokenIds"][i], "repair": repairData["repairAmounts"][i]} for i in range(len(repairData["tokenIds"]))])}"
             )
-            self.Transaction(self.contract_staking.functions.batchRepairTokenWear(repairData))
+            self.Transaction(
+                self.contract_staking.functions.batchRepairTokenWear(repairData)
+            )
             self.printSuccessMessage()
-            self.delay()
 
         for t in self.tokens:
             _prepare_data(t)
@@ -81,17 +101,30 @@ class HenoRepair(HenoBase):
         (threshold, repair) = self._get_repair_params("repair_charge")
 
         def _RepairCharge(_, t):
-            data = self.contract_chargepod.functions.getRepairStatus(t["CollectionID"], t["TokenID"]).call()
+            data = self.contract_chargepod.functions.getRepairStatus(
+                t["CollectionID"], t["TokenID"]
+            ).call()
             toRepair = int(data[1]) - int(data[0])
             if toRepair >= int(threshold) and toRepair > 0:
                 r = min(repair, int(toRepair))
-                print(f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}", end=" ", flush=True)
-                self.logger.log(f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}")
-                self.Transaction(self.contract_chargepod.functions.repairCharge(int(t["CollectionID"]), int(t["TokenID"]), int(r)))
+                print(
+                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}",
+                    end=" ",
+                    flush=True,
+                )
+                self.logger.log(
+                    f"Performing charge repair: ({t['CollectionID']}, {t['TokenID']}), Repair: {r}"
+                )
+                self.Transaction(
+                    self.contract_chargepod.functions.repairCharge(
+                        int(t["CollectionID"]), int(t["TokenID"]), int(r)
+                    )
+                )
                 self.printSuccessMessage()
-                self.delay()
             else:
-                print(f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge. ({toRepair}){Colors.ENDC}")
+                print(
+                    f"{Colors.WARNING}Skipped token ({t['CollectionID']}, {t['TokenID']}), dont need repair charge. ({toRepair}){Colors.ENDC}"
+                )
 
         for t in self.tokens:
             self.TryAction(_RepairCharge, t)

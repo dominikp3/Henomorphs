@@ -222,7 +222,7 @@ class HenoBase:
                 print(f"{Colors.FAIL}[Error]")
                 print(f"{type(e).__name__}: {e}")
                 if isinstance(e, ContractCustomError):
-                    print(self.decode_contract_error(e.data))
+                    print(f"Decoded error:\n{self.decode_contract_error(e.data)}")
                 self.logger.log(f"Transaction failed: {type(e).__name__}: {e}")
                 if self.debug_mode:
                     print(Colors.FAIL, end="")
@@ -264,6 +264,7 @@ class HenoBase:
     def printSuccessMessage(self):
         print(f"{Colors.OKGREEN}[OK]{Colors.ENDC}")
         self.logger.log("Transaction successfull")
+        self.delay()
 
     def secondsToHMS(self, time):
         return str(timedelta(seconds=time))
@@ -338,6 +339,5 @@ class HenoBase:
             fn = getattr(contract.functions, func)
             self.Transaction(fn(*args))
             self.printSuccessMessage()
-            self.delay()
 
         self.TryAction(_Write, None)

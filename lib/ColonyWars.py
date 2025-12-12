@@ -32,15 +32,21 @@ class ColonyWars(HenoBase):
         return kit
 
     def CWIsKitAvailabe(self, kit) -> bool:
-        d = self.contract_chargepod.functions.canStartBattle(kit["CollectionIDs"], kit["TokenIDs"]).call()
+        d = self.contract_chargepod.functions.canStartBattle(
+            kit["CollectionIDs"], kit["TokenIDs"]
+        ).call()
         for i in d:
             if i == False:
                 return False
         return True
 
     def CWPrintStatus(self):
-        d = self.contract_chargepod.call_decoded("getColonyStrategicOverview", self.colony["Colony"])
-        d2 = self.contract_chargepod.call_decoded("getColonyCombatRank", self.colony["Season"], self.colony["Colony"])
+        d = self.contract_chargepod.call_decoded(
+            "getColonyStrategicOverview", self.colony["Colony"]
+        )
+        d2 = self.contract_chargepod.call_decoded(
+            "getColonyCombatRank", self.colony["Season"], self.colony["Colony"]
+        )
         # Cooldowns: attack, raid, siege, betrayal
         print(
             f"canAttack: {self.GetColoredBool(d["readiness"]["canAttack"])}\n"
@@ -63,20 +69,28 @@ class ColonyWars(HenoBase):
         )
 
     def CWPrintBattleHistory(self):
-        d = self.contract_chargepod.call_decoded("getColonyBattleHistory", self.colony["Colony"], self.colony["Season"])
+        d = self.contract_chargepod.call_decoded(
+            "getColonyBattleHistory", self.colony["Colony"], self.colony["Season"]
+        )
         for i in d:
-            i["battleStartTime"] = datetime.fromtimestamp(int(i["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
+            i["battleStartTime"] = datetime.fromtimestamp(
+                int(i["battleStartTime"])
+            ).strftime("%Y-%m-%d %H:%M:%S")
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
             i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
         print(self.DictToPrettyString(d))
 
     def CWCompareWithColony(self, potentialVictim):
-        d = self.contract_chargepod.call_decoded("compareBattlePower", self.colony["Colony"], potentialVictim)
+        d = self.contract_chargepod.call_decoded(
+            "compareBattlePower", self.colony["Colony"], potentialVictim
+        )
         print(self.DictToPrettyString(d))
 
     def CWRanking(self, fullAddress: bool):
-        d = self.contract_chargepod.call_decoded("getSeasonWarPrizeRanking", self.colony["Season"], 1000)
+        d = self.contract_chargepod.call_decoded(
+            "getSeasonWarPrizeRanking", self.colony["Season"], 1000
+        )
         for i in d:
             isMy = i["colonyId"] == bytes.fromhex(self.colony["Colony"][2:])
             i["colonyId"] = self.bToHex(i["colonyId"])
@@ -92,7 +106,9 @@ class ColonyWars(HenoBase):
 
     def CWGetUnresolvedBattles(self):
         bs = []
-        d = self.contract_chargepod.call_decoded("getColonyBattleHistory", self.colony["Colony"], self.colony["Season"])
+        d = self.contract_chargepod.call_decoded(
+            "getColonyBattleHistory", self.colony["Colony"], self.colony["Season"]
+        )
         for b in d:
             if b["resolved"] == False:
                 bs.append(b)
@@ -103,8 +119,13 @@ class ColonyWars(HenoBase):
         l = self.CWGetUnresolvedBattles()
         for i in l:
             if i["wasAttacker"] == False:
-                s = self.contract_chargepod.functions.getBattleSnapshot(i["battleId"]).call()
-                if len(s[1]) == 0 and time.time() - int(i["battleStartTime"]) <= 60 * 60 * 2:
+                s = self.contract_chargepod.functions.getBattleSnapshot(
+                    i["battleId"]
+                ).call()
+                if (
+                    len(s[1]) == 0
+                    and time.time() - int(i["battleStartTime"]) <= 60 * 60 * 2
+                ):
                     a.append(i)
         return a
 
@@ -119,8 +140,12 @@ class ColonyWars(HenoBase):
     def CWPrintCurrentBattles(self):
         d = self.CWGetUnresolvedBattles()
         for i in d:
-            snapshot = self.contract_chargepod.functions.getBattleSnapshot(i["battleId"]).call()
-            i["battleStartTime"] = datetime.fromtimestamp(int(i["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
+            snapshot = self.contract_chargepod.functions.getBattleSnapshot(
+                i["battleId"]
+            ).call()
+            i["battleStartTime"] = datetime.fromtimestamp(
+                int(i["battleStartTime"])
+            ).strftime("%Y-%m-%d %H:%M:%S")
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
             i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
@@ -131,10 +156,14 @@ class ColonyWars(HenoBase):
         print(self.DictToPrettyString(d))
 
     def CWPrintWeatherForecast(self):
-        battlefieldWeather = self.contract_chargepod.call_decoded("getBattlefieldWeather")
+        battlefieldWeather = self.contract_chargepod.call_decoded(
+            "getBattlefieldWeather"
+        )
         weatherAdvantage = self.contract_chargepod.call_decoded("checkWeatherAdvantage")
         weatherForecast = self.contract_chargepod.call_decoded("getWeatherForecast")
-        weatherForecast["timeUntilChange"] = self.secondsToHMS(weatherForecast["timeUntilChange"])
+        weatherForecast["timeUntilChange"] = self.secondsToHMS(
+            weatherForecast["timeUntilChange"]
+        )
 
         match (battlefieldWeather["weatherType"]):
             case 0:  # Clear
@@ -183,7 +212,9 @@ class ColonyWars(HenoBase):
             i = 1
             for c in battles:
                 tmp = deepcopy(c)
-                tmp["battleStartTime"] = datetime.fromtimestamp(int(tmp["battleStartTime"])).strftime("%Y-%m-%d %H:%M:%S")
+                tmp["battleStartTime"] = datetime.fromtimestamp(
+                    int(tmp["battleStartTime"])
+                ).strftime("%Y-%m-%d %H:%M:%S")
                 tmp["battleId"] = self.bToHex(tmp["battleId"])
                 tmp["opponent"] = self.bToHex(tmp["opponent"])
                 tmp["stakeAmount"] = tmp["stakeAmount"] / self.ZicoDividor
@@ -210,10 +241,14 @@ class ColonyWars(HenoBase):
             self.logger.log("ERROR: Selected kit is not availabe!")
             return
 
-        cd = self.contract_chargepod.functions.getCombatCooldowns(self.colony["Colony"]).call()
+        cd = self.contract_chargepod.functions.getCombatCooldowns(
+            self.colony["Colony"]
+        ).call()
         # 0 - attack cooldown
         if cd[0] > 0:
-            print(f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(max(cd))}{Colors.ENDC}")
+            print(
+                f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(max(cd))}{Colors.ENDC}"
+            )
             self.logger.log("ERROR: Collony in cooldown preiod!")
             return
 
@@ -223,11 +258,14 @@ class ColonyWars(HenoBase):
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.initiateAttack(
-                    self.colony["Colony"], victim, kit["CollectionIDs"], kit["TokenIDs"], int(stakeAmmount * self.ZicoDividor)
+                    self.colony["Colony"],
+                    victim,
+                    kit["CollectionIDs"],
+                    kit["TokenIDs"],
+                    int(stakeAmmount * self.ZicoDividor),
                 )
             )
             self.printSuccessMessage()
-            self.delay()
 
         self.TryAction(_Attack, None)
 
@@ -254,9 +292,12 @@ class ColonyWars(HenoBase):
             print("Defending: ", end=" ", flush=True)
             self.logger.log(f"Defending: ")
             self.logger.log(f"Using kit: {str(kit)}")
-            self.Transaction(self.contract_chargepod.functions.defendBattle(battle["battleId"], kit["CollectionIDs"], kit["TokenIDs"]))
+            self.Transaction(
+                self.contract_chargepod.functions.defendBattle(
+                    battle["battleId"], kit["CollectionIDs"], kit["TokenIDs"]
+                )
+            )
             self.printSuccessMessage()
-            self.delay()
 
         return self.TryAction(_Defend, None)
 
@@ -272,25 +313,36 @@ class ColonyWars(HenoBase):
         def _Resolve(*_):
             print("Resolve Battle: ", end=" ", flush=True)
             self.logger.log(f"Resolve Battle: {self.bToHex(battle["battleId"])}")
-            self.Transaction(self.contract_chargepod.functions.resolveBattle(battle["battleId"]))
+            self.Transaction(
+                self.contract_chargepod.functions.resolveBattle(battle["battleId"])
+            )
             self.printSuccessMessage()
-            self.delay()
 
         self.TryAction(_Resolve, None)
 
     def CWAIDefender(self):
-        print(f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}")
+        print(
+            f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}"
+        )
         self.logger.log("[AI Defender] Activated AI defender.")
 
         def _bot_defend_battle(battle):
             kits = self.colony["WarKits"]
             for kit in kits:
                 if self.CWDefend(battle, kit):
-                    print(f"{Colors.OKGREEN}Succesfully defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}")
-                    self.logger.log(f"[AI Defender] Succesfully defended battle: {self.bToHex(battle["battleId"])}")
+                    print(
+                        f"{Colors.OKGREEN}Succesfully defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}"
+                    )
+                    self.logger.log(
+                        f"[AI Defender] Succesfully defended battle: {self.bToHex(battle["battleId"])}"
+                    )
                     return
-            print(f"{Colors.FAIL}Failed to defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}")
-            self.logger.log(f"[AI Defender] Failed to defended battle: {self.bToHex(battle["battleId"])}")
+            print(
+                f"{Colors.FAIL}Failed to defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}"
+            )
+            self.logger.log(
+                f"[AI Defender] Failed to defended battle: {self.bToHex(battle["battleId"])}"
+            )
 
         def _bot_main_loop(_):
             print("Checking for threats... ")

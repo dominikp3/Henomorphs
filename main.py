@@ -15,16 +15,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+from pathlib import Path
+from lib import HenoInit
 from lib.FileLogger import FileLogger
 from lib.HenoAutoGenConfig import HenoAutoGenConfig
 from lib.Henomorphs import Henomorphs
-from lib.Encryption import InvalidPasswordError
 from lib.Colors import Colors
-import getpass
 import sys
 import traceback
-import os
-from lib.ConfigSelector import GetConfig
 from lib.Summarizer import Summarizer
 
 
@@ -38,7 +36,7 @@ def except_hook(exctype, value, _):
             FileLogger().log(f"The script crashed:\n{e}")
         except:
             pass
-    exit()
+    exit(42)
 
 
 def main():
@@ -51,38 +49,8 @@ def main():
         + f"under certain conditions; See LICENSE.md file for details\n{Colors.ENDC}"
     )
 
-    if not os.path.exists("userdata"):
-        os.makedirs("userdata")
-
-    (account, hConf, cConf) = GetConfig()
-
-    if Henomorphs.IsKeySaved(account):
-        try:
-            hen = Henomorphs(
-                account, getpass.getpass("Password: "), hConf, colonyConfFile=cConf
-            )
-        except InvalidPasswordError:
-            print(
-                f"{Colors.FAIL}Invalid password or privkey.bin corrupted{Colors.ENDC}"
-            )
-            exit(2)
-    else:
-        print(
-            f"{Colors.HEADER}Welcome{Colors.ENDC}\n"
-            + f"It looks like you use the script for first time. You need to import wallet (with Henomorphs tokens) and select a password.\n"
-            + f"Your wallet will be stored in {Colors.BOLD}privkey.bin{Colors.ENDC} file using secure AES 256 bit encryption.\n"
-            + f"{Colors.WARNING}WARNING: DO NOT SHARE YOUR PRIVATE KEY, {Colors.BOLD}privkey.bin{Colors.ENDC}{Colors.WARNING} FILE AND PASSWORD WITH ANYONE.\n"
-            + f"For better security, use strong password.{Colors.ENDC}\n"
-        )
-        prvkey = input("Enter private key: ")
-        password = input("Enter password: ")
-        Henomorphs.SaveKey(account, prvkey, password)
-        print(f"{Colors.OKGREEN}Succesfully stored key{Colors.ENDC}")
-        if os.path.isfile(f"userdata/{account}{hConf}"):
-            print(f"{Colors.OKGREEN}Please restart script{Colors.ENDC}")
-        else:
-            Henomorphs(account, password, hConf, True)
-        exit()
+    hen = HenoInit.init()
+    hConf = Path(hen.henoConfPath).name
 
     summarizer = Summarizer(hen.GetPol(), hen.GetZico(), hen.GetYlw())
     while True:
@@ -97,7 +65,7 @@ def main():
         print("4) Repair Wear")
         print("5) Repair Charge")
         print("6) Check rewards / claim")
-        print("7) Check ZICO approval")
+        print("7) Check ZICO/YLW approval")
         print("8) Change specializations")
         print("9) Colony Wars \U0001f3ae\U00002694")
         print(f"42) Auto update {hConf} (add / remove tokens)")
@@ -185,7 +153,7 @@ def PerformAction(hen):
             return
 
 
-def RepairWear(hen):
+def RepairWear(hen: Henomorphs):
     def _match(x):
         match (x):
             case "1":
@@ -204,28 +172,35 @@ def RepairWear(hen):
 
     while True:
         print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
-        print(
-            f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}"
-        )
-        print(
-            f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}"
-        )
+        print(f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}")
+        print(f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         if _match(input("Select function: ")):
             return
 
 
-def ApproveZico(hen):
+def ApproveZico(hen: Henomorphs):
     while True:
-        print(f"{Colors.HEADER}Select contract address{Colors.ENDC}")
+        print(f"{Colors.HEADER}Select contract & Currency{Colors.ENDC}")
+        print(f"{Colors.WARNING}ZICO Approval{Colors.ENDC}")
         print(
-            f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) - Inspection ({hen.GetZicoApproval(hen.contract_nft_address)})"
+            f"{Colors.OKCYAN}1) NFT (0xCEaA...D61f) ({hen.GetZicoApproval(hen.contract_nft_address)})"
         )
         print(
-            f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) - Actions, Repair charge ({hen.GetZicoApproval(hen.contract_chargepod_address)})"
+            f"{Colors.OKCYAN}2) HenomorphsChargepod (0xA899...Db76) ({hen.GetZicoApproval(hen.contract_chargepod_address)})"
         )
         print(
-            f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) - Repair Wear ({hen.GetZicoApproval(hen.contract_staking_address)})"
+            f"{Colors.OKCYAN}3) HenomorphsStaking (0xA16C...97BE) ({hen.GetZicoApproval(hen.contract_staking_address)})"
+        )
+        print(f"{Colors.OKGREEN}YLW Approval{Colors.ENDC}")
+        print(
+            f"{Colors.OKCYAN}4) NFT (0xCEaA...D61f) ({hen.GetYlwApproval(hen.contract_nft_address)})"
+        )
+        print(
+            f"{Colors.OKCYAN}5) HenomorphsChargepod (0xA899...Db76) ({hen.GetYlwApproval(hen.contract_chargepod_address)})"
+        )
+        print(
+            f"{Colors.OKCYAN}6) HenomorphsStaking (0xA16C...97BE) ({hen.GetYlwApproval(hen.contract_staking_address)})"
         )
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
@@ -235,6 +210,12 @@ def ApproveZico(hen):
                 hen.ApproveZico(hen.contract_chargepod_address, int(input("Value: ")))
             case "3":
                 hen.ApproveZico(hen.contract_staking_address, int(input("Value: ")))
+            case "4":
+                hen.ApproveYLW(hen.contract_nft_address, int(input("Value: ")))
+            case "5":
+                hen.ApproveYLW(hen.contract_chargepod_address, int(input("Value: ")))
+            case "6":
+                hen.ApproveYLW(hen.contract_staking_address, int(input("Value: ")))
             case "0":
                 return
 
@@ -245,9 +226,7 @@ def checkApproval(hen):
         or hen.GetZicoApproval(hen.contract_chargepod_address) <= 50
         or hen.GetZicoApproval(hen.contract_staking_address) <= 50
     ):
-        print(
-            f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors."
-        )
+        print(f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.")
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 
 
@@ -274,9 +253,7 @@ def ColonyWars(hen, summarizer):
             case "2":
                 hen.CWPrintBattleHistory()
             case "3":
-                hen.CWAttack(
-                    input("Victim collony ID: "), float(input("Stake amount [ZICO]: "))
-                )
+                hen.CWAttack(input("Victim collony ID: "), float(input("Stake amount [ZICO]: ")))
             case "4":
                 hen.CWDefend()
             case "5":

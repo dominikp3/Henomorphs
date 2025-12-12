@@ -64,12 +64,20 @@ class HenoZico(HenoBase):
             / self.ZicoDividor
         )
 
-    def ApproveZico(self, spender, value):
-        def _ApproveZico(*_):
-            print(f"Approving ZICO ({spender}, {value}):", end=" ", flush=True)
+    def GetYlwApproval(self, spender) -> float:
+        return (
+            self.contract_ylw.functions.allowance(self.public_address, spender).call()
+            / self.ZicoDividor
+        )
+
+    def Approve(self, currency, spender, value):
+        contract = self.contract_zico if currency == "ZICO" else self.contract_ylw
+
+        def _Approve(*_):
+            print(f"Approving {currency} ({spender}, {value}):", end=" ", flush=True)
             self.logger.log(f"Approving ZICO ({spender}, {value})")
             self.Transaction(
-                self.contract_zico.functions.approve(spender, value * self.ZicoDividor)
+                contract.functions.approve(spender, value * self.ZicoDividor)
             )
             self.printSuccessMessage()
 
@@ -77,4 +85,10 @@ class HenoZico(HenoBase):
             print(f"{Colors.FAIL}Value must be greater than zero{Colors.ENDC}")
             return
 
-        self.TryAction(_ApproveZico, None)
+        self.TryAction(_Approve, None)
+
+    def ApproveZico(self, spender, value):
+        self.Approve("ZICO", spender, value)
+
+    def ApproveYLW(self, spender, value):
+        self.Approve("YLW", spender, value)

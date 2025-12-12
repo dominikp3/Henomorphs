@@ -1,0 +1,27 @@
+# Henomorphs Defense Bot (Linux daemon/service config file)
+#
+# Instruction:
+# Copy it to ~/.config/systemd/user
+# Replace ExecStart and WorkingDirectory with an actual path (must be absolute path)
+# Replace <account> with "./" (default) or "YourAccountName/"
+# Replace <henoConfig> with your heno config file name (like "heno.json")
+# Replace <colonyConfig> with your colony config file name (like "colony.json")
+#
+# To run: systemctl --user start Henomorphs.service
+# To auth: run daemon_auth.py
+# To check if working: systemctl --user status Henomorphs.service
+# To stop: systemctl --user stop Henomorphs.service
+
+[Unit]
+Description=Henomorphs Colony Wars defense bot
+After=network.target
+
+[Service]
+ExecStart=/path/to/Henomorphs/rundaemon.sh <account> <henoConfig> <colonyConfig>
+Restart=no
+WorkingDirectory=/path/to/Henomorphs
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target
