@@ -45,7 +45,7 @@ class ColonyWars(HenoBase):
             "getColonyStrategicOverview", self.colony["Colony"]
         )
         d2 = self.contract_chargepod.call_decoded(
-            "getColonyCombatRank", self.colony["Season"], self.colony["Colony"]
+            "getColonyCombatRank", self.colony["Colony"]
         )
         # Cooldowns: attack, raid, siege, betrayal
         print(
@@ -65,13 +65,17 @@ class ColonyWars(HenoBase):
             + f"level: {d["threats"]["level"]}\n"
             + f"underAttack: {self.GetColoredBool(d["threats"]["underAttack"])}\n"
             + f"territoriesUnderSiege: {self.GetColoredBool(d["threats"]["territoriesUnderSiege"])}\n\n"
-            + f"Rank: {d2["position"]}. place (score: {d2["score"]})\n"
+            + f"Rank: {d2["rank"]}. place (score: {d2["score"]}). Total participants: {d2["totalParticipants"]}\n"
         )
 
     def CWPrintBattleHistory(self):
         d = self.contract_chargepod.call_decoded(
-            "getColonyBattleHistory", self.colony["Colony"], self.colony["Season"]
-        )
+            "getColonyBattleHistory",
+            self.colony["Colony"],
+            self.colony["Season"],
+            0,
+            1000,
+        )["battles"]
         for i in d:
             i["battleStartTime"] = datetime.fromtimestamp(
                 int(i["battleStartTime"])
@@ -107,8 +111,12 @@ class ColonyWars(HenoBase):
     def CWGetUnresolvedBattles(self):
         bs = []
         d = self.contract_chargepod.call_decoded(
-            "getColonyBattleHistory", self.colony["Colony"], self.colony["Season"]
-        )
+            "getColonyBattleHistory",
+            self.colony["Colony"],
+            self.colony["Season"],
+            0,
+            1000,
+        )["battles"]
         for b in d:
             if b["resolved"] == False:
                 bs.append(b)
@@ -319,6 +327,35 @@ class ColonyWars(HenoBase):
             self.printSuccessMessage()
 
         self.TryAction(_Resolve, None)
+
+    def CWColonyHealth(self):
+        def _repair(_, i):
+            print("Repair colony health: ", end=" ", flush=True)
+            self.logger.log(f"Repair colony health: {self.colony["Colony"]}")
+            self.Transaction(
+                self.contract_chargepod.functions.restoreColonyHealth(
+                    self.colony["Colony"], i
+                )
+            )
+            self.printSuccessMessage()
+
+        d = self.contract_chargepod.call_decoded(
+            "getColonyHealthDetails", self.colony["Colony"]
+        )
+        d["restorationCost"] /= self.ZicoDividor
+        print(self.DictToPrettyString(d))
+        d2 = list(self.contract_chargepod.call_decoded("getRestorationOptions").values())
+        l2 = int(len(d2) / 2)
+        print(f"{Colors.HEADER}Availabe options:{Colors.ENDC}")
+        print(f"{Colors.OKCYAN}0) Do nothing{Colors.ENDC}")
+        for i in range(l2):
+            print(
+                f"{Colors.OKCYAN}{i+1}) {d2[i+l2]} ({int(d2[i])/self.ZicoDividor} ZICO or something IDK){Colors.ENDC}"
+            )
+        sel = input("Select: ")
+        sel = int(sel)
+        if sel > 0 and sel < l2:
+            self.TryAction(_repair, sel)
 
     def CWAIDefender(self):
         print(

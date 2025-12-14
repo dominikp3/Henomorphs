@@ -230,7 +230,7 @@ def checkApproval(hen):
         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 
 
-def ColonyWars(hen, summarizer):
+def ColonyWars(hen:Henomorphs, summarizer:Summarizer):
     if not hen.CWIsConfigured():
         print(f"{Colors.FAIL}Colony Wars is not configured !{Colors.ENDC}")
         return
@@ -246,6 +246,7 @@ def ColonyWars(hen, summarizer):
         print(f"{Colors.OKCYAN}7) Ranking \U0001f396")
         print(f"{Colors.OKCYAN}8) Check Current Battles \U0001f4d6")
         print(f"{Colors.OKCYAN}9) Check Weather Forecast \U000026c5")
+        print(f"{Colors.OKCYAN}10) Check Colony Health \U00002764")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -266,6 +267,8 @@ def ColonyWars(hen, summarizer):
                 hen.CWPrintCurrentBattles()
             case "9":
                 hen.CWPrintWeatherForecast()
+            case "10":
+                hen.CWColonyHealth()
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
