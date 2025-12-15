@@ -168,10 +168,6 @@ class ColonyWars(HenoBase):
             "getBattlefieldWeather"
         )
         weatherAdvantage = self.contract_chargepod.call_decoded("checkWeatherAdvantage")
-        weatherForecast = self.contract_chargepod.call_decoded("getWeatherForecast")
-        weatherForecast["timeUntilChange"] = self.secondsToHMS(
-            weatherForecast["timeUntilChange"]
-        )
 
         match (battlefieldWeather["weatherType"]):
             case 0:  # Clear
@@ -204,11 +200,24 @@ class ColonyWars(HenoBase):
             + f"Defender Mod: {battlefieldWeather["defenderMod"]}%\n"
             + f"Weather {favours}, {weatherAdvantage["advantage"]}% advantage."
         )
+        weatherForecast = self.contract_chargepod.call_decoded("getWeatherForecast")
+        weatherForecast["timeUntilChange"] = self.secondsToHMS(
+            weatherForecast["timeUntilChange"]
+        )
         print(
             f"{Colors.OKBLUE}Weather Forecast:{Colors.ENDC}\n"
-            + f"Current: {weatherForecast["current"]}\n"
-            + f"Prognosed: {weatherForecast["next"]} in {weatherForecast["timeUntilChange"]}\n"
+            + f"{weatherForecast["next"]} in {weatherForecast["timeUntilChange"]}"
+            + (
+                f"\n{Colors.WARNING}FORECAST IS NOT RELIABLE"
+                if not weatherForecast["forecastReliable"]
+                else ""
+            )
         )
+        daily = self.contract_chargepod.call_decoded("getDailyWeatherForecast")
+        print(f"{Colors.OKBLUE}Daily Forecast:{Colors.ENDC}")
+        for i in range(daily["currentPeriod"], 12):
+            print(f"{i*2 % 24:02d}:00 - {(i+1)*2 % 24:02d}:00    {daily["periods"][i]}")
+        print()
 
     def CWSelectBattle(self, battles):
         battle = None
@@ -344,7 +353,9 @@ class ColonyWars(HenoBase):
         )
         d["restorationCost"] /= self.ZicoDividor
         print(self.DictToPrettyString(d))
-        d2 = list(self.contract_chargepod.call_decoded("getRestorationOptions").values())
+        d2 = list(
+            self.contract_chargepod.call_decoded("getRestorationOptions").values()
+        )
         l2 = int(len(d2) / 2)
         print(f"{Colors.HEADER}Availabe options:{Colors.ENDC}")
         print(f"{Colors.OKCYAN}0) Do nothing{Colors.ENDC}")
