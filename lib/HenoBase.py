@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import math
 from pprint import pformat
 from web3 import Web3
@@ -267,7 +267,10 @@ class HenoBase:
         self.delay()
 
     def secondsToHMS(self, time):
-        return str(timedelta(seconds=time))
+        return str(timedelta(seconds=int(time)))
+
+    def timestampToStr(self, time):
+        return datetime.fromtimestamp(int(time)).strftime("%Y-%m-%d %H:%M:%S")
 
     def GetColoredBool(self, b: bool):
         if b:
@@ -277,6 +280,9 @@ class HenoBase:
 
     def bToHex(self, bytes):
         return f"0x{bytes.hex()}"
+    
+    def hexToB(self, hexstr):
+        return bytes.fromhex(hexstr[2:])
 
     def shortAddr(self, strHexAdr):
         return f"{strHexAdr[0:6]}...{strHexAdr[-4:]}"
@@ -287,6 +293,18 @@ class HenoBase:
             s = s.replace("True", f"{Colors.OKGREEN}True{Colors.ENDC}")
             s = s.replace("False", f"{Colors.FAIL}False{Colors.ENDC}")
         return s
+
+    def DictPSColorize(self, ps: str, name: str, color: str):
+        i = ps.find(name)
+        if i >= 0:
+            il = ps.rfind("\n", None, i)
+            ir = ps.find("\n", i)
+            if il < 0:
+                il = 0
+            if ir < 0:
+                ir = len(ps)
+            return ps[:il] + color + ps[il:ir] + Colors.ENDC + ps[ir:]
+        return ps
 
     def CallWithoutCrash(self, func, arg=None):
         try:

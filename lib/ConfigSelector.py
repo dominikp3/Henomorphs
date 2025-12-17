@@ -9,7 +9,7 @@ def GetConfig() -> tuple[str, str, str]:
     config = ""
     config_colony = None
 
-    pattern = re.compile(r"^(?!logs).*")
+    pattern = re.compile(r"^(?!logs|_.*).*")
     accounts = [d for d in os.listdir("userdata/") if os.path.isdir(f"userdata/{d}") and pattern.match(d)]
     if len(accounts) > 0:
         print(f"{Colors.HEADER}Multiple accounts detected:{Colors.ENDC}")

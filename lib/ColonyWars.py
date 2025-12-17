@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
 import time
-import traceback
 from tabulate import tabulate
 from lib.Colors import Colors
 from lib.HenoBase import HenoBase
@@ -91,12 +90,18 @@ class ColonyWars(HenoBase):
         )
         print(self.DictToPrettyString(d))
 
-    def CWRanking(self, fullAddress: bool):
+    def CWRanking(self, fullAddress: bool, defStake: bool):
         d = self.contract_chargepod.call_decoded(
             "getSeasonWarPrizeRanking", self.colony["Season"], 1000
         )
         for i in d:
-            isMy = i["colonyId"] == bytes.fromhex(self.colony["Colony"][2:])
+            if defStake:
+                dsi = self.contract_chargepod.call_decoded(
+                    "getDefensiveStakeInfo", i["colonyId"]
+                )
+                i["DefStake"] = dsi["currentStake"] / self.ZicoDividor
+                print(self.ChickChar, end=" ", flush=True)
+            isMy = i["colonyId"] == self.hexToB(self.colony["Colony"])
             i["colonyId"] = self.bToHex(i["colonyId"])
             i["estimatedPrize"] = i["estimatedPrize"] / self.ZicoDividor
             i["earnedThisSeason"] = i["earnedThisSeason"] / self.ZicoDividor
@@ -106,6 +111,8 @@ class ColonyWars(HenoBase):
             if isMy:
                 i["colonyId"] = f"{Colors.WARNING}{i["colonyId"]}{Colors.ENDC}"
             i["inAlliance"] = self.GetColoredBool(i["inAlliance"])
+        if defStake:
+            print()
         print(tabulate(d, headers="keys"))
 
     def CWGetUnresolvedBattles(self):
@@ -271,7 +278,7 @@ class ColonyWars(HenoBase):
 
         def _Attack(*_):
             print("Performing attack: ", end=" ", flush=True)
-            self.logger.log(f"Performing attack: ")
+            self.logger.log(f"Performing attack on colony {victim}")
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.initiateAttack(
@@ -307,7 +314,7 @@ class ColonyWars(HenoBase):
 
         def _Defend(*_):
             print("Defending: ", end=" ", flush=True)
-            self.logger.log(f"Defending: ")
+            self.logger.log(f"Defending battle: {self.bToHex(battle["battleId"])}")
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.defendBattle(
@@ -339,7 +346,7 @@ class ColonyWars(HenoBase):
 
     def CWColonyHealth(self):
         def _repair(_, i):
-            print("Repair colony health: ", end=" ", flush=True)
+            print("Repair colony health:", end=" ", flush=True)
             self.logger.log(f"Repair colony health: {self.colony["Colony"]}")
             self.Transaction(
                 self.contract_chargepod.functions.restoreColonyHealth(

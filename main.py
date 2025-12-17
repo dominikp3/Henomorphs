@@ -172,8 +172,12 @@ def RepairWear(hen: Henomorphs):
 
     while True:
         print(f"{Colors.HEADER}Select alghorithm{Colors.ENDC}")
-        print(f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}")
-        print(f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}")
+        print(
+            f"{Colors.OKCYAN}1) Sequence {Colors.OKBLUE}(Repair them one by one){Colors.ENDC}"
+        )
+        print(
+            f"{Colors.OKCYAN}2) Batch {Colors.OKBLUE}(Repair all at once){Colors.ENDC}"
+        )
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         if _match(input("Select function: ")):
             return
@@ -220,17 +224,19 @@ def ApproveZico(hen: Henomorphs):
                 return
 
 
-def checkApproval(hen):
-    if (
-        hen.GetZicoApproval(hen.contract_nft_address) <= 50
-        or hen.GetZicoApproval(hen.contract_chargepod_address) <= 50
-        or hen.GetZicoApproval(hen.contract_staking_address) <= 50
-    ):
-        print(f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors.")
-        print(f"-" * 50, end=f"\n{Colors.ENDC}")
+# def checkApproval(hen):
+#     if (
+#         hen.GetZicoApproval(hen.contract_nft_address) <= 50
+#         or hen.GetZicoApproval(hen.contract_chargepod_address) <= 50
+#         or hen.GetZicoApproval(hen.contract_staking_address) <= 50
+#     ):
+#         print(
+#             f"{Colors.WARNING}WARNING: Low ZICO approval. Please check approval to avoid errors."
+#         )
+#         print(f"-" * 50, end=f"\n{Colors.ENDC}")
 
 
-def ColonyWars(hen:Henomorphs, summarizer:Summarizer):
+def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
     if not hen.CWIsConfigured():
         print(f"{Colors.FAIL}Colony Wars is not configured !{Colors.ENDC}")
         return
@@ -247,6 +253,13 @@ def ColonyWars(hen:Henomorphs, summarizer:Summarizer):
         print(f"{Colors.OKCYAN}8) Check Current Battles \U0001f4d6")
         print(f"{Colors.OKCYAN}9) Check Weather Forecast \U000026c5")
         print(f"{Colors.OKCYAN}10) Check Colony Health \U00002764")
+        print(f"{Colors.OKCYAN}11) Check My Teritories \U0001f50e\U0001f5fa")
+        print(f"{Colors.OKCYAN}12) Check Current sieges \U0001f4d6")
+        print(f"{Colors.OKCYAN}13) Siege \U0001f3c7")
+        print(f"{Colors.OKCYAN}14) Defense siege \U0001f6e1")
+        print(f"{Colors.OKCYAN}15) Resolve siege \U0001f4dc")
+        print(f"{Colors.OKCYAN}16) Raid teritory \U0001f3c7")
+        print(f"{Colors.OKCYAN}17) Check All teritories \U0001f30d")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -254,7 +267,9 @@ def ColonyWars(hen:Henomorphs, summarizer:Summarizer):
             case "2":
                 hen.CWPrintBattleHistory()
             case "3":
-                hen.CWAttack(input("Victim collony ID: "), float(input("Stake amount [ZICO]: ")))
+                hen.CWAttack(
+                    input("Victim collony ID: "), float(input("Stake amount [ZICO]: "))
+                )
             case "4":
                 hen.CWDefend()
             case "5":
@@ -262,13 +277,34 @@ def ColonyWars(hen:Henomorphs, summarizer:Summarizer):
             case "6":
                 hen.CWCompareWithColony(input("Potential victim collony ID: "))
             case "7":
-                hen.CWRanking(input("Show full addresses [y/n]: ") == "y")
+                hen.CWRanking(
+                    input("Show full addresses [y/n]: ") == "y",
+                    input("Show defensive stake [y/n]: ") == "y",
+                )
             case "8":
                 hen.CWPrintCurrentBattles()
             case "9":
                 hen.CWPrintWeatherForecast()
             case "10":
                 hen.CWColonyHealth()
+            case "11":
+                hen.CWGetMyTeritoriesStstus()
+            case "12":
+                hen.CWPrintCurrentSieges()
+            case "13":
+                hen.CWSiege(
+                    int(input("Teritory ID: ")), float(input("Stake amount [ZICO]: "))
+                )
+            case "14":
+                hen.CWDefendSiege()
+            case "15":
+                hen.CWResolveSiege()
+            case "16":
+                hen.CWRaidTeritory(
+                    int(input("Teritory ID: ")), float(input("Stake amount [ZICO]: "))
+                )
+            case "17":
+                hen.CWPrintTeritories(input("Show full addresses [y/n]: ") == "y")
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
