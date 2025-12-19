@@ -10,6 +10,12 @@ class ColonyWars(HenoBase):
     def CWIsConfigured(self) -> bool:
         return self.colony is not None
 
+    def CWPSColorOp(self, d: dict):
+        """Dict to Pretty String and colorize opponent name"""
+        ps = self.DictToPrettyString(d)
+        ps = self.DictPSColorize(ps, "opponentName", Colors.OKBLUE)
+        return ps
+
     def CWSelectKit(self):
         kit = None
         kits = self.colony["WarKits"]
@@ -80,17 +86,20 @@ class ColonyWars(HenoBase):
                 int(i["battleStartTime"])
             ).strftime("%Y-%m-%d %H:%M:%S")
             i["battleId"] = self.bToHex(i["battleId"])
+            i["opponentName"] = self.cns.rlookup(i["opponent"])
             i["opponent"] = self.bToHex(i["opponent"])
             i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
-        print(self.DictToPrettyString(d))
+        print(self.CWPSColorOp(d))
 
-    def CWCompareWithColony(self, potentialVictim):
+    def CWCompareWithColony(self, potentialVictim: str):
         d = self.contract_chargepod.call_decoded(
-            "compareBattlePower", self.colony["Colony"], potentialVictim
+            "compareBattlePower",
+            self.colony["Colony"],
+            self.cns.lookup(potentialVictim),
         )
         print(self.DictToPrettyString(d))
 
-    def CWRanking(self, fullAddress: bool, defStake: bool):
+    def CWRanking(self, showAddress: bool, defStake: bool):
         d = self.contract_chargepod.call_decoded(
             "getSeasonWarPrizeRanking", self.colony["Season"], 1000
         )
@@ -102,18 +111,27 @@ class ColonyWars(HenoBase):
                 i["DefStake"] = dsi["currentStake"] / self.ZicoDividor
                 print(self.ChickChar, end=" ", flush=True)
             isMy = i["colonyId"] == self.hexToB(self.colony["Colony"])
+            isAlliance = self.alliance.IsCAlliance(i["colonyId"])
+            i["Name"] = self.cns.rlookup(i["colonyId"])
             i["colonyId"] = self.bToHex(i["colonyId"])
             i["estimatedPrize"] = i["estimatedPrize"] / self.ZicoDividor
             i["earnedThisSeason"] = i["earnedThisSeason"] / self.ZicoDividor
-            if not fullAddress:
-                i["colonyId"] = self.shortAddr(i["colonyId"])
-                i["ownerAddress"] = self.shortAddr(i["ownerAddress"])
+            if not showAddress:
+                i.pop("ownerAddress")
+                i.pop("colonyId")
+                if i["Name"][:2] == "0x":
+                    i["Name"] = self.shortAddr(i["Name"])
             if isMy:
-                i["colonyId"] = f"{Colors.WARNING}{i["colonyId"]}{Colors.ENDC}"
+                i["Name"] = f"{Colors.OKGREEN}{i["Name"]}{Colors.ENDC}"
+            elif isAlliance:
+                i["Name"] = f"{Colors.WARNING}{i["Name"]}{Colors.ENDC}"
             i["inAlliance"] = self.GetColoredBool(i["inAlliance"])
+        for i in range(len(d)):
+            d[i] = {"rank": d[i].pop("rank"), "Name": d[i].pop("Name")} | d[i]
         if defStake:
             print()
         print(tabulate(d, headers="keys"))
+        print(f"Colors: {Colors.OKGREEN}My  {Colors.WARNING}Alliance{Colors.ENDC}")
 
     def CWGetUnresolvedBattles(self):
         bs = []
@@ -161,6 +179,7 @@ class ColonyWars(HenoBase):
             i["battleStartTime"] = datetime.fromtimestamp(
                 int(i["battleStartTime"])
             ).strftime("%Y-%m-%d %H:%M:%S")
+            i["opponentName"] = self.cns.rlookup(i["opponent"])
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
             i["stakeAmount"] = i["stakeAmount"] / self.ZicoDividor
@@ -168,7 +187,7 @@ class ColonyWars(HenoBase):
             i["snapshot"] = snapshot
             i["TotalAttackerPower"] = sum(snapshot[0])
             i["TotalDefenderPower"] = sum(snapshot[1])
-        print(self.DictToPrettyString(d))
+        print(self.CWPSColorOp(d))
 
     def CWPrintWeatherForecast(self):
         battlefieldWeather = self.contract_chargepod.call_decoded(
@@ -239,11 +258,12 @@ class ColonyWars(HenoBase):
                 tmp["battleStartTime"] = datetime.fromtimestamp(
                     int(tmp["battleStartTime"])
                 ).strftime("%Y-%m-%d %H:%M:%S")
+                tmp["opponentName"] = self.cns.rlookup(tmp["opponent"])
                 tmp["battleId"] = self.bToHex(tmp["battleId"])
                 tmp["opponent"] = self.bToHex(tmp["opponent"])
                 tmp["stakeAmount"] = tmp["stakeAmount"] / self.ZicoDividor
                 print(f"{i})")
-                print(self.DictToPrettyString(tmp))
+                print(self.CWPSColorOp(tmp))
                 print()
                 i += 1
             if 0 < (v := int(input("Select battle: "))) < i:
@@ -253,6 +273,16 @@ class ColonyWars(HenoBase):
         return battle
 
     def CWAttack(self, victim: str, stakeAmmount: int, kit=None):
+        lvictim = self.cns.lookup(victim)
+        if lvictim == None:
+            print(
+                f"{Colors.FAIL}'{victim}' is not recognized as valid colony name or address!{Colors.ENDC}"
+            )
+            return
+
+        if self.alliance.CAntiBetrayal(lvictim):
+            return
+
         if kit == None:
             kit = self.CWSelectKit()
 
@@ -278,12 +308,12 @@ class ColonyWars(HenoBase):
 
         def _Attack(*_):
             print("Performing attack: ", end=" ", flush=True)
-            self.logger.log(f"Performing attack on colony {victim}")
+            self.logger.log(f"Performing attack on colony {self.bToHex(lvictim)}")
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.initiateAttack(
                     self.colony["Colony"],
-                    victim,
+                    lvictim,
                     kit["CollectionIDs"],
                     kit["TokenIDs"],
                     int(stakeAmmount * self.ZicoDividor),

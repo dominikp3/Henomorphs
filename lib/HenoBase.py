@@ -5,6 +5,7 @@ from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 import time
 import traceback
+from lib.CNS import ColonyNameSystem
 from lib.Colors import Colors
 from lib.DecodedContract import DecodedContract
 from lib.Encryption import Encryption
@@ -130,6 +131,12 @@ class HenoBase:
             with open(self.colonyConfPath, "r") as file:
                 self.colony = json.load(file)
                 jsonschema.validate(instance=self.colony, schema=colony_config_schema)
+
+        self.anti_betrayal = self.config.get("anti_betrayal", True)
+        self.cns = ColonyNameSystem(self.contract_chargepod)
+        from lib.CAlliance import ColonyAlliance
+
+        self.alliance = ColonyAlliance(self)
 
     @staticmethod
     def SaveKey(account, key, password):
@@ -280,7 +287,7 @@ class HenoBase:
 
     def bToHex(self, bytes):
         return f"0x{bytes.hex()}"
-    
+
     def hexToB(self, hexstr):
         return bytes.fromhex(hexstr[2:])
 
@@ -295,16 +302,21 @@ class HenoBase:
         return s
 
     def DictPSColorize(self, ps: str, name: str, color: str):
-        i = ps.find(name)
-        if i >= 0:
-            il = ps.rfind("\n", None, i)
-            ir = ps.find("\n", i)
-            if il < 0:
-                il = 0
-            if ir < 0:
-                ir = len(ps)
-            return ps[:il] + color + ps[il:ir] + Colors.ENDC + ps[ir:]
-        return ps
+        cs = ps
+        lastI = 0
+        while True:
+            i = cs.find(name, lastI)
+            if i >= 0:
+                il = cs.rfind("\n", None, i)
+                ir = cs.find("\n", i)
+                if il < 0:
+                    il = 0
+                if ir < 0:
+                    ir = len(cs)
+                cs = cs[:il] + color + cs[il:ir] + Colors.ENDC + cs[ir:]
+                lastI = ir
+            else:
+                return cs
 
     def CallWithoutCrash(self, func, arg=None):
         try:

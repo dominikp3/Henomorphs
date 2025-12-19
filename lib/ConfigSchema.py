@@ -38,6 +38,13 @@ config_schema = {
             },
             "additionalProperties": False,
         },
+        "terrain_maintenance_threshold": {
+            "type": "integer",
+            "minimum": 86400,
+            "maximum": 259200,
+        },
+        "terrain_repair_threshold": {"type": "integer", "minimum": 0},
+        "anti_betrayal": {"type": "boolean"},
     },
     "additionalProperties": False,
 }

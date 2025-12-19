@@ -15,6 +15,13 @@ class ColonyWarsTeritory(ColonyWars):
             )
         return self._MyTeritories
 
+    def CWTPSColorOp(self, d: dict):
+        """Dict to Pretty String and colorize opponent / defender names"""
+        ps = self.DictToPrettyString(d)
+        ps = self.DictPSColorize(ps, "defenderName", Colors.OKBLUE)
+        ps = self.DictPSColorize(ps, "attackerName", Colors.OKBLUE)
+        return ps
+
     def CWGetMyTeritoriesStstus(self):
         def _maintain(_, i):
             print(f"Maintain Territory [{i}]:", end=" ", flush=True)
@@ -41,10 +48,11 @@ class ColonyWarsTeritory(ColonyWars):
         for i in info:
             last = int(time()) - i.pop("lastMaintenancePayment")
             col = ""
-            if last > 24 * 60 * 60:
-                col = Colors.FAIL if last > 2 * 24 * 60 * 60 else Colors.WARNING
-                maintenance.append(i["id"])
-            if i["damageLevel"] > 0:
+            if last > 86400:
+                col = Colors.FAIL if last > 172800 else Colors.WARNING
+                if last > self.config.get("terrain_maintenance_threshold", 86400):
+                    maintenance.append(i["id"])
+            if i["damageLevel"] > self.config.get("terrain_repair_threshold", 0):
                 repair.append(i["id"])
             i["lastMaintenancePayment"] = self.secondsToHMS(last)
             s = self.DictToPrettyString(i)
@@ -99,13 +107,16 @@ class ColonyWarsTeritory(ColonyWars):
             i["siegeStartTime"] = self.timestampToStr(i["siegeStartTime"])
             i["siegeEndTime"] = self.timestampToStr(i["siegeEndTime"])
             i["siegeId"] = self.bToHex(i["siegeId"])
+            i["defenderName"] = self.cns.rlookup(i["defenderColony"])
+            i["attackerName"] = self.cns.rlookup(i["attackerColony"])
+            i["defenderColony"] = self.bToHex(i["defenderColony"])
             i["attackerColony"] = self.bToHex(i["attackerColony"])
             i["defenderColony"] = self.bToHex(i["defenderColony"])
             i["snapshot"] = snapshot
             i["TotalAttackerPower"] = sum(snapshot[0])
             i["TotalDefenderPower"] = sum(snapshot[1])
             i["timeRemaining"] = self.secondsToHMS(i["timeRemaining"])
-        print(self.DictToPrettyString(d))
+        print(self.CWTPSColorOp(d))
 
     def CWSelectSiege(self, sieges):
         siege = None
@@ -121,11 +132,13 @@ class ColonyWarsTeritory(ColonyWars):
                 tmp["siegeStartTime"] = self.timestampToStr(tmp["siegeStartTime"])
                 tmp["siegeEndTime"] = self.timestampToStr(tmp["siegeEndTime"])
                 tmp["siegeId"] = self.bToHex(tmp["siegeId"])
+                i["defenderName"] = self.cns.rlookup(i["defenderColony"])
+                i["attackerName"] = self.cns.rlookup(i["attackerColony"])
                 tmp["attackerColony"] = self.bToHex(tmp["attackerColony"])
                 tmp["defenderColony"] = self.bToHex(tmp["defenderColony"])
                 tmp["timeRemaining"] = self.secondsToHMS(tmp["timeRemaining"])
                 print(f"{i})")
-                print(self.DictToPrettyString(tmp))
+                print(self.CWTPSColorOp(tmp))
                 print()
                 i += 1
             if 0 < (v := int(input("Select siege: "))) < i:
@@ -134,7 +147,10 @@ class ColonyWarsTeritory(ColonyWars):
                 print(f"{Colors.FAIL}Selected non existing siege!{Colors.ENDC}")
         return siege
 
-    def CWSiege(self, victim: int, stakeAmmount: int, kit=None):
+    def CWSiege(self, terrain: int, stakeAmmount: int, kit=None):
+        if self.alliance.TAntiBetrayal(terrain):
+            return
+
         if kit == None:
             kit = self.CWSelectKit()
 
@@ -160,11 +176,11 @@ class ColonyWarsTeritory(ColonyWars):
 
         def _Siege(*_):
             print("Performing siege: ", end=" ", flush=True)
-            self.logger.log(f"Performing siege: ")
+            self.logger.log(f"Performing siege on {terrain}")
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.siegeTerritory(
-                    victim,
+                    terrain,
                     self.colony["Colony"],
                     kit["CollectionIDs"],
                     kit["TokenIDs"],
@@ -196,7 +212,7 @@ class ColonyWarsTeritory(ColonyWars):
 
         def _DefendSiege(*_):
             print("Defending siege: ", end=" ", flush=True)
-            self.logger.log(f"Defending siege: ")
+            self.logger.log(f"Defending siege: {self.bToHex(siege["siegeId"])}")
             self.logger.log(f"Using kit: {str(kit)}")
             self.Transaction(
                 self.contract_chargepod.functions.defendSiege(
@@ -226,21 +242,33 @@ class ColonyWarsTeritory(ColonyWars):
 
         self.TryAction(_Resolve, None)
 
-    def CWPrintTeritories(self, fullAddress: bool = False):
+    def CWPrintTeritories(self, showAddress: bool = False):
         d = self.contract_chargepod.call_decoded("getAllTerritoriesRaidStatus")
         for i in d:
             isMy = i["territoryId"] in self.CWGetMyTeritories()
+            isAlliance = self.alliance.IsTAlliance(i["territoryId"])
+            i["ColonyName"] = self.cns.rlookup(i["controllingColony"])
             i["controllingColony"] = self.bToHex(i["controllingColony"])
             i["raidCooldownRemaining"] = self.secondsToHMS(i["raidCooldownRemaining"])
             i["lastRaidTime"] = self.timestampToStr(i["lastRaidTime"])
-            if not fullAddress:
-                i["controllingColony"] = self.shortAddr(i["controllingColony"])
+            if not showAddress:
+                i.pop("controllingColony")
+                if i["ColonyName"][:2] == "0x":
+                    i["ColonyName"] = self.shortAddr(i["ColonyName"])
             if isMy:
                 i["territoryName"] = (
                     f"{Colors.OKGREEN}{i["territoryName"]}{Colors.ENDC}"
                 )
-
+            elif isAlliance:
+                i["territoryName"] = f"{Colors.WARNING}{i["Name"]}{Colors.ENDC}"
+        for i in range(len(d)):
+            d[i] = {
+                "ID": d[i].pop("territoryId"),
+                "territoryName": d[i].pop("territoryName"),
+                "ColonyName": d[i].pop("ColonyName"),
+            } | d[i]
         print(tabulate(d, headers="keys"))
+        print(f"Colors: {Colors.OKGREEN}My  {Colors.WARNING}Alliance{Colors.ENDC}")
 
     def CWRaidTeritory(self, teritoryId, stake):
         self.logger.log("Started Raid teritory")
