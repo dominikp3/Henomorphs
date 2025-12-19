@@ -1,3 +1,4 @@
+import random
 import time
 from lib.Colors import Colors
 from lib.Henomorphs import Henomorphs
@@ -14,6 +15,9 @@ def CWAI(hen: Henomorphs):
     ai_ofn_prefer_weak = hen.colony.get("ai_offensive_prefer_weak", False)
     ai_ofn_excl = hen.colony.get("ai_offensive_excluded", [])
     ai_ofn_excl = [hen.hexToB(e) for e in ai_ofn_excl]
+    ai_ofn_pref_target = hen.colony.get("ai_offensive_pref_target", [])
+    ai_ofn_pref_target = [hen.hexToB(e) for e in ai_ofn_pref_target]
+    random.shuffle(ai_ofn_pref_target)
 
     print(
         f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}"
@@ -111,18 +115,19 @@ def CWAI(hen: Henomorphs):
             if cd[0] == 0:  # No cooldowns
                 colonies, terrains = hen.CWAdvisedTargets(True)
                 colonies.sort(key=lambda x: x["Stake"], reverse=not ai_ofn_prefer_weak)
-                colonies = [
-                    c
-                    for c in colonies
-                    if c["Stake"] <= ai_ofn_max_ds and c["ID"] not in ai_ofn_excl
-                ]
-                colonies_ids = [c["ID"] for c in colonies]
-                terrains = [t for t in terrains if t["Colony"] in colonies_ids]
-                for t in terrains[:3]:
-                    if hen.CallWithoutCrash(_bot_siege, t["ID"]):
+                colonies = [c for c in colonies if c["Stake"] <= ai_ofn_max_ds]
+                colonies_ids = ai_ofn_pref_target + [c["ID"] for c in colonies]
+                colonies_ids = [c for c in colonies_ids if c not in ai_ofn_excl]
+                terrains_ids = []
+                for c in colonies_ids:
+                    for t in terrains:
+                        if t["Colony"] == c:
+                            terrains_ids.append(t["ID"])
+                for t in terrains_ids[:3]:
+                    if hen.CallWithoutCrash(_bot_siege, t):
                         break
-                for c in colonies[:3]:
-                    if hen.CallWithoutCrash(_bot_attack, c["ID"]):
+                for c in colonies_ids[:3]:
+                    if hen.CallWithoutCrash(_bot_attack, c):
                         break
             else:
                 print(f"Cooldown! {hen.secondsToHMS(max(cd))}")

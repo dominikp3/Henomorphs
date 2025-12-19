@@ -101,6 +101,10 @@ colony_config_schema = {
             "type": "array",
             "items": {"type": "string", "pattern": r"^0[x][a-fA-F0-9]{64}$"},
         },
+        "ai_offensive_pref_target": {  # List of prefered targets. WARN: This ignores max_ds and prefer_weak
+            "type": "array",
+            "items": {"type": "string", "pattern": r"^0[x][a-fA-F0-9]{64}$"},
+        },
     },
     "additionalProperties": False,
     "required": ["Colony", "WarKits", "Season"],
