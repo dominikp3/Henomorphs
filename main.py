@@ -36,7 +36,7 @@ def except_hook(exctype, value, _):
             FileLogger().log(f"The script crashed:\n{e}")
         except:
             pass
-    exit(42)
+        exit(42)
 
 
 def main():

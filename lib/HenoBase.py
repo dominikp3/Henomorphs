@@ -307,8 +307,8 @@ class HenoBase:
         while True:
             i = cs.find(name, lastI)
             if i >= 0:
-                il = cs.rfind("\n", None, i)
-                ir = cs.find("\n", i)
+                il = cs.rfind("\n", None, i) + 1
+                ir = cs.find("\n", i) + 1
                 if il < 0:
                     il = 0
                 if ir < 0:
