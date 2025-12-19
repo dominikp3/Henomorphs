@@ -260,7 +260,9 @@ class ColonyWarsTeritory(ColonyWars):
                     f"{Colors.OKGREEN}{i["territoryName"]}{Colors.ENDC}"
                 )
             elif isAlliance:
-                i["territoryName"] = f"{Colors.WARNING}{i["Name"]}{Colors.ENDC}"
+                i["territoryName"] = (
+                    f"{Colors.WARNING}{i["territoryName"]}{Colors.ENDC}"
+                )
         for i in range(len(d)):
             d[i] = {
                 "ID": d[i].pop("territoryId"),

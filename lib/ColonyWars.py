@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from tabulate import tabulate
 from lib.Colors import Colors
@@ -82,9 +82,7 @@ class ColonyWars(HenoBase):
             1000,
         )["battles"]
         for i in d:
-            i["battleStartTime"] = datetime.fromtimestamp(
-                int(i["battleStartTime"])
-            ).strftime("%Y-%m-%d %H:%M:%S")
+            i["battleStartTime"] = self.timestampToStr(i["battleStartTime"])
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponentName"] = self.cns.rlookup(i["opponent"])
             i["opponent"] = self.bToHex(i["opponent"])
@@ -176,9 +174,7 @@ class ColonyWars(HenoBase):
             snapshot = self.contract_chargepod.functions.getBattleSnapshot(
                 i["battleId"]
             ).call()
-            i["battleStartTime"] = datetime.fromtimestamp(
-                int(i["battleStartTime"])
-            ).strftime("%Y-%m-%d %H:%M:%S")
+            i["battleStartTime"] = self.timestampToStr(i["battleStartTime"])
             i["opponentName"] = self.cns.rlookup(i["opponent"])
             i["battleId"] = self.bToHex(i["battleId"])
             i["opponent"] = self.bToHex(i["opponent"])
@@ -239,10 +235,20 @@ class ColonyWars(HenoBase):
                 else ""
             )
         )
+
         daily = self.contract_chargepod.call_decoded("getDailyWeatherForecast")
+        utc_offset = datetime.now().astimezone().utcoffset()
+
+        def tformat(i):
+            t = timedelta(hours=2 * i) + utc_offset
+            hours, remainder = divmod(t.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            return f"{hours:02}:{minutes:02}"
+
         print(f"{Colors.OKBLUE}Daily Forecast:{Colors.ENDC}")
         for i in range(daily["currentPeriod"], 12):
-            print(f"{i*2 % 24:02d}:00 - {(i+1)*2 % 24:02d}:00    {daily["periods"][i]}")
+            t = timedelta(hours=i * 2) + utc_offset
+            print(f"{tformat(i)} - {tformat(i+1)}\t{daily["periods"][i]}")
         print()
 
     def CWSelectBattle(self, battles):
@@ -255,9 +261,7 @@ class ColonyWars(HenoBase):
             i = 1
             for c in battles:
                 tmp = deepcopy(c)
-                tmp["battleStartTime"] = datetime.fromtimestamp(
-                    int(tmp["battleStartTime"])
-                ).strftime("%Y-%m-%d %H:%M:%S")
+                tmp["battleStartTime"] = self.timestampToStr(i["battleStartTime"])
                 tmp["opponentName"] = self.cns.rlookup(tmp["opponent"])
                 tmp["battleId"] = self.bToHex(tmp["battleId"])
                 tmp["opponent"] = self.bToHex(tmp["opponent"])
@@ -404,6 +408,50 @@ class ColonyWars(HenoBase):
         sel = int(sel)
         if sel > 0 and sel < l2:
             self.TryAction(_repair, sel)
+
+    def CWGetAdvise(self):
+        col = self.colony["Colony"]
+        aa = self.contract_chargepod.call_decoded("getAdvisedCombatActions", col)
+        if len(aa) > 0:
+            print(f"{Colors.OKBLUE}Advised actions:{Colors.ENDC}")
+            for a in aa:
+                print(f"\U0001F534 {a}")
+
+        tt = self.contract_chargepod.call_decoded("getTerritoriesForCapture", 100)
+        if len(tt["territoryIds"]) > 0:
+            print(f"{Colors.OKBLUE}Territories availabe to capture:{Colors.ENDC}")
+            print(f"{tt['territoryIds']}")
+
+        wt = self.contract_chargepod.call_decoded("getSupposedWeakTargets", col, 100)
+        wtl = len(wt["targets"])
+        if wtl > 0:
+            wtt = []
+            for i in range(wtl):
+                wtt.append(
+                    {
+                        "Name": self.cns.rlookup(wt["targets"][i]),
+                        "ID": self.bToHex(wt["targets"][i]),
+                        "Stake": wt["stakes"][i] / self.ZicoDividor,
+                    }
+                )
+            print(f"{Colors.OKBLUE}Recommended attack targets:{Colors.ENDC}")
+            print(tabulate(wtt, headers="keys"))
+
+        ter = self.contract_chargepod.call_decoded("getAllTerritoriesRaidStatus")
+        tr = []
+        for t in ter:
+            if t["canRaid"] and t["controllingColony"] in wt["targets"]:
+                tr.append(
+                    {
+                        "ID": t["territoryId"],
+                        "territoryName": t["territoryName"],
+                        "Colony": self.cns.rlookup(t["controllingColony"]),
+                        "damageLevel": t["damageLevel"],
+                    }
+                )
+        if len(tr) > 0:
+            print(f"{Colors.OKBLUE}Ideal for Siege or Raid:{Colors.ENDC}")
+            print(tabulate(tr, headers="keys"))
 
     def CWAIDefender(self):
         print(

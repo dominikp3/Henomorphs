@@ -8,10 +8,10 @@ Nieoficjalny skrypt w pythonie do interakcji ze smart kontraktami kolekcji NFT H
 Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 
 ## Funkcje:
-- Wyświetlanie ststystyk tokenów NFT w formie tabeli
+- Wyświetlanie statystyk tokenów NFT w formie tabeli
 - Wykonywanie inspekcji mecha kurczaków
 - Wykonywanie akcji kolonialnych (możliwość wyboru akcji dla każdego tokena)
-  - Możliwość użycia zaruwno performAction() jak i batchPerformAction()
+  - Możliwość użycia zarówno performAction() jak i batchPerformAction()
 - Naprawa kurczaków
 - Sprawdzanie i claim zysków ze stakingu
 - Obsługa wielu portfeli i plików konfiguracyjnych (przypisanie akcji do kurczaka)
@@ -20,15 +20,22 @@ Skrypt działa z pythonem 3.12 i 3.13 (Nie testowano na starszych wersjach)
 - Zapisywanie wykonywanych operacji do plików - wraz z dokładną datą i godziną
 - Możliwość zmiany opłaty za transakcję (gas fee)
 - Wyświetlanie **Txn hash** - można sprawdzić transakcję na [PolygonScan](https://polygonscan.com/)
+- Funkcja ustawienia maksymalnej opłaty w ```config.json``` **[BETA]**
+- Dekodowanie **ContractCustomError** i wyświetlanie komunikatu w formie czytelnej dla człowieka
 - **Colony Wars**
   - Atak na kolonie
-  - Obwona koloni
+  - Obrona koloni
   - Rozstrzyganie bitwy
   - Wyświetlanie podstawowych informacji o aktualnym stanie koloni i historia bitew
   - Wyświetlanie rankingu
-- **‼️NOWOŚĆ‼️**
-  - Funkcja ustawienia maksymalnej opłaty w ```config.json``` **[BETA]**
-  - Dekodowanie ContractCustomError i wyświetlanie komunikatu w formie czytelnej dla człowieka **[BETA]**
+  - **‼️NOWOŚĆ‼️** Wyświetlanie nazw kolonii, Przy ataku możliwość podania nazwy lub ID
+  - **‼️NOWOŚĆ‼️** Atak na terytoria (Siege, obrona, rozstrzyganie)
+  - **‼️NOWOŚĆ‼️** Wyświetlanie wszystkich terenów ze statystykami i Cooldown
+  - **‼️NOWOŚĆ‼️** Maintenance i naprawa swoich terenów
+  - **‼️NOWOŚĆ‼️** Funkcja AntiBetrayal, dzięki której już nigdy nie zdradzisz swoich sojuszników.
+  - **‼️NOWOŚĆ‼️** Oznaczenie sojuszników w rankingu i liście terenów 
+  - **‼️NOWOŚĆ‼️** Prognoza pogody, również **godzinowa**
+  - **‼️NOWOŚĆ‼️** Taktyczny doradca, który zarekomenduje działania bojowe i wskaże cele do ataku
 
 
 ## Instalacja:
@@ -56,7 +63,7 @@ pip install -r requirements.txt
 ```
 
 ## Aktualizacja
-W celu zaktualizowania do najnowszej wersji, można użyć skyptów (update.bat lub update.sh) lub zrobić to ręcznie:
+W celu zaktualizowania do najnowszej wersji, można użyć skryptów (update.bat lub update.sh) lub zrobić to ręcznie:
 #### Windows (powershell lub cmd)
 ```powershell
 git pull
@@ -74,7 +81,7 @@ pip install -r requirements.txt
 Pliki konfiguracyjne przechowywane są w katalogu ```userdata```. \
 Jeśli katalog ```userdata``` nie istnieje, skrypt utworzy go automatycznie.
 
-Konfiguracja skłąda się z plików:
+Konfiguracja składa się z plików:
 - ```privkey.bin``` - zaszyfrowany klucz prywatny portfela
 - ```config.json``` - plik z konfiguracją skryptu **[Opcjonalny]**
 - ```heno.json``` - lista tokenów NFT
@@ -101,7 +108,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     // Maksymalna ilość prób wykonania transakcji (powtarzanie w przypadku niepowodzenia)
 
     "random_action_on_fail": (integer),
-    // użycie losowej akcji w przypadku niepowodzenia z wybraną akcją (0 - wyłączone, liczba określa po ilu nieudanych próbach stosowana jest losowa). Ta opcja może się przydać, jeśli chcesz mieć większą pweność, że każdy kurczak wykona jakąś akcję. Jak jedna nie działa, to inna.
+    // użycie losowej akcji w przypadku niepowodzenia z wybraną akcją (0 - wyłączone, liczba określa po ilu nieudanych próbach stosowana jest losowa). Ta opcja może się przydać, jeśli chcesz mieć większą pewność, że każdy kurczak wykona jakąś akcję. Jak jedna nie działa, to inna.
     // UWAGA: Ta opcja kompatybilna jest tylko z algorytmem SingleChickSequence, NIE DZIAŁA Z BATCH
 
     "delay": (number),
@@ -129,7 +136,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
 
     "print_priv_key": (boolean),
     // Wyświetlaj klucz prywatny
-    // Opcja przydatna jeśli chcesz wyeksporwować klucz z pliku privkey.bin
+    // Opcja przydatna jeśli chcesz wyeksportować klucz z pliku privkey.bin
 
     "gas_mul": (number),
     // Mnożnik do modyfikacji opłaty gas fee. (domyślnie 1)
@@ -168,11 +175,26 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     "algorithms": {
       // Wybór algorytmów
       // ask - pytaj przy każdym użyciu
-      // sequence - sekwencyjnie, po koleji pojedyńczo
+      // sequence - sekwencyjnie, po kolei pojedynczo
       // batch - wiele naraz, oszczędza gas fee
       "actions": (string),
       "repair_wear": (string)
-    }
+    },
+
+     "terrain_maintenance_threshold": (integer)
+     // Próg czasu, powyżej którego teren ma być naprawiony (s)
+     // domyślnie: 86400, Zakres: 86400 - 259200
+     // Przydatne do oszczędzania na opłatach
+     // Przy czasie 24h-47h opłata pozostaje ta sama,
+     // dopiero kolejny dzień podwyższa opłatę
+
+    "terrain_repair_threshold": (integer),
+    // Próg naprawy terenu - naprawia teren jeśli zniszczony powyżej progu (domyślnie 0)
+
+    "anti_betrayal": (bool),
+    // Włącza AntiBetrayal (system zapobiegania zdradom)
+    // Jeśli włączone, uniemożliwia atakowania sojuszników
+    // Domyślnie true
 }
 ```
 
@@ -190,7 +212,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
       // Akcja (1 - 8). Możesz ustawić na 0, jeśli nie chcesz wykonywać akcji dla tego tokena
 
       "Spec": (int)
-      // Specjalizacjia (0 - 2), parametr opcjonalny
+      // Specjalizacja (0 - 2), parametr opcjonalny
       // -1 - brak
     },
     // ...
@@ -204,7 +226,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
     "Season": (int), // numer sezonu
     "WarKits": [     // Lista zestawów bojowych
 
-        {// objekt zestawu
+        {// obiekt zestawu
             "name": (string), // Opcjonalna nazwa
             "CollectionIDs": [], // Lista ID kolekcji (int)
             "TokenIDs": [] // Lista ID tokenów (int)
@@ -220,7 +242,7 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
 
 ### config.json
 W tym przykładzie podano parametry domyślne.\
-Plik ```config.json``` i wszystkie parametery są **opcjonalne**.
+Plik ```config.json``` i wszystkie parametry są **opcjonalne**.
 ```json
 {
   "max_transaction_attempts": 5,
@@ -337,7 +359,7 @@ Lista "WarKits" musi zawierac **co najmniej jeden element**
 }
 ```
 
-### Multikonta i wiele konfigurcji
+### Multikonta i wiele konfiguracji
 Plik ```config.json``` powinien być **tylko jeden**, w katalogu ```userdata```
 
 W celu zaimportowania dodatkowych portfeli, należy utworzyć folder o dowolnej nazwie w katalogu ```userdata```\
@@ -346,7 +368,7 @@ Przy pierwszym użyciu każdego kolejnego konta należy zaimportować portfel, u
 
 W celu utworzenia wielu konfiguracji tokenów, należy w folderze ```userdata``` (lub folderze innego konta) utworzyć dodatkowe pliki .json zawierające w nazwie 'heno'. Skrypt pozwoli wybrać plik przy uruchomieniu.
 
-W przypadku Wojen Kolonialnych, również można mieć wiele plików - muszą one zawierać słowo "colony" w nazwie i rozszeżenie .json
+W przypadku Wojen Kolonialnych, również można mieć wiele plików - muszą one zawierać słowo "colony" w nazwie i rozszerzenie .json
 
 > 💡 Folder nie musi zawierać pliku ```heno.json``` (domyślna nazwa), ale powinien zawierać **co najmniej jeden** plik ze słowem 'heno' w nazwie
 

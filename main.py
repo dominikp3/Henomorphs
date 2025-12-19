@@ -260,7 +260,10 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
         print(f"{Colors.OKCYAN}15) Resolve siege \U0001f4dc")
         print(f"{Colors.OKCYAN}16) Raid teritory \U0001f3c7")
         print(f"{Colors.OKCYAN}17) Check All teritories \U0001f30d")
-        print(f"{Colors.OKCYAN}18) Check Alliance")
+        print(
+            f"{Colors.OKCYAN}18) Check Alliance \U0001f9d1\U0000200d\U0001f91d\U0000200d\U0001f9d1"
+        )
+        print(f"{Colors.OKCYAN}19) Tactical Advisor \U0001f9ed")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -308,6 +311,8 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
                 hen.CWPrintTeritories(input("Show addresses [y/n]: ") == "y")
             case "18":
                 hen.alliance.PrintAlliance()
+            case "19":
+                hen.CWGetAdvise()
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
