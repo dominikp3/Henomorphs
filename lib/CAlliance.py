@@ -22,6 +22,7 @@ class ColonyAlliance:
                 self._alliance_data = self.hen.contract_chargepod.call_decoded(
                     "getAllianceInfo", c["allianceId"]
                 )
+                self._alliance_data["id"] = c["allianceId"]
                 for wallet in self._alliance_data["members"]:
                     self._alliance_wallet_colonies[wallet] = []
                     colonies = self.hen.contract_chargepod.call_decoded(
@@ -50,7 +51,7 @@ class ColonyAlliance:
         awc = self._alliance_wallet_colonies
         act = self._alliance_col_ter
         print(
-            f"{Colors.HEADER}Alliance: {ad['name']}{Colors.ENDC}\n"
+            f"{Colors.HEADER}Alliance: {ad['name']}{Colors.ENDC} ({self.hen.bToHex(ad['id'])})\n"
             f"Alliance leader: {Colors.OKBLUE}{self.hen.cns.rlookup(ad['leader'])}{Colors.ENDC} ({self.hen.bToHex(ad['leader'])})\n"
             f"Treasury: {ad['treasury']/self.hen.ZicoDividor}\n"
             f"Stability: {ad['stability']}%\n"

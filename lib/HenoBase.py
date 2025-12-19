@@ -307,12 +307,14 @@ class HenoBase:
         while True:
             i = cs.find(name, lastI)
             if i >= 0:
-                il = cs.rfind("\n", None, i) + 1
-                ir = cs.find("\n", i) + 1
+                il = cs.rfind("\n", None, i)
+                ir = cs.find("\n", i)
                 if il < 0:
                     il = 0
                 if ir < 0:
                     ir = len(cs)
+                il += 1
+                ir += 1
                 cs = cs[:il] + color + cs[il:ir] + Colors.ENDC + cs[ir:]
                 lastI = ir
             else:
