@@ -261,7 +261,7 @@ class ColonyWars(HenoBase):
             i = 1
             for c in battles:
                 tmp = deepcopy(c)
-                tmp["battleStartTime"] = self.timestampToStr(i["battleStartTime"])
+                tmp["battleStartTime"] = self.timestampToStr(tmp["battleStartTime"])
                 tmp["opponentName"] = self.cns.rlookup(tmp["opponent"])
                 tmp["battleId"] = self.bToHex(tmp["battleId"])
                 tmp["opponent"] = self.bToHex(tmp["opponent"])
