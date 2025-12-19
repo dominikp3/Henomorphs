@@ -149,19 +149,19 @@ class ColonyWarsTeritory(ColonyWars):
 
     def CWSiege(self, terrain: int, stakeAmmount: int, kit=None):
         if self.alliance.TAntiBetrayal(terrain):
-            return
+            return False
 
         if kit == None:
             kit = self.CWSelectKit()
 
         if kit == None:
-            return
+            return False
 
         self.logger.log("Started Siege")
         if not self.CWIsKitAvailabe(kit):
             print(f"{Colors.FAIL}Selected kit is not availabe!{Colors.ENDC}")
             self.logger.log("ERROR: Selected kit is not availabe!")
-            return
+            return False
 
         cd = self.contract_chargepod.functions.getCombatCooldowns(
             self.colony["Colony"]
@@ -169,10 +169,10 @@ class ColonyWarsTeritory(ColonyWars):
         # 2 - siege cooldown
         if cd[2] > 0:
             print(
-                f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(max(cd))}{Colors.ENDC}"
+                f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(cd[2])}{Colors.ENDC}"
             )
             self.logger.log("ERROR: Collony in cooldown preiod!")
-            return
+            return False
 
         def _Siege(*_):
             print("Performing siege: ", end=" ", flush=True)
@@ -189,7 +189,7 @@ class ColonyWarsTeritory(ColonyWars):
             )
             self.printSuccessMessage()
 
-        self.TryAction(_Siege, None)
+        return self.TryAction(_Siege, None)
 
     def CWDefendSiege(self, siege=None, kit=None) -> bool:
         if siege == None:

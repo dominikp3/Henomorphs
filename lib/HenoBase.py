@@ -67,12 +67,12 @@ class HenoBase:
         self.max_transaction_attempts = self.config.get("max_transaction_attempts", 5)
         self.random_action_on_fail = self.config.get("random_action_on_fail", 0)
         self.delay_t = self.config.get("delay", 3)
-        self.delay_ai_defender = self.config.get("ai_defender_delay", 600)
         if self.random_action_on_fail >= self.max_transaction_attempts:
             raise Exception(
                 "random_action_on_fail must be smaller than max_transaction_attempts"
             )
         self.debug_mode = self.config.get("debug", False)
+        self.experimental = self.config.get("experimental", False)
         self.logger = FileLogger(
             f"userdata/logs/{account}", self.config.get("log", False)
         )
@@ -320,7 +320,7 @@ class HenoBase:
 
     def CallWithoutCrash(self, func, arg=None):
         try:
-            func(arg)
+            return func(arg)
         except Exception as e:
             estr = "".join(traceback.format_exception(e))
             print(f"{Colors.FAIL}{estr}{Colors.ENDC}")
@@ -328,7 +328,7 @@ class HenoBase:
                 self.logger.log(f"Error:\n{estr}")
             except:
                 pass
-            pass
+            return False
 
     def SelectContract(self):
         print("1) contract_chargepod")

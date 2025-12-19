@@ -15,7 +15,9 @@ class ColonyNameSystem:
                 self._names_map[i["name"]] = i["colonyId"]
         return self._names_map
 
-    def lookup(self, name: str) -> bytes:
+    def lookup(self, name: str | bytes) -> bytes:
+        if type(name) is bytes:
+            return name
         n = self._get_names()
         adres = n.get(name)
         if not adres and name[:2] == "0x":

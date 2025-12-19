@@ -282,16 +282,16 @@ class ColonyWars(HenoBase):
             print(
                 f"{Colors.FAIL}'{victim}' is not recognized as valid colony name or address!{Colors.ENDC}"
             )
-            return
+            return False
 
         if self.alliance.CAntiBetrayal(lvictim):
-            return
+            return False
 
         if kit == None:
             kit = self.CWSelectKit()
 
         if kit == None:
-            return
+            return False
 
         self.logger.log("Started Attack")
         if not self.CWIsKitAvailabe(kit):
@@ -305,10 +305,10 @@ class ColonyWars(HenoBase):
         # 0 - attack cooldown
         if cd[0] > 0:
             print(
-                f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(max(cd))}{Colors.ENDC}"
+                f"{Colors.FAIL}Collony in cooldown preiod! {self.secondsToHMS(cd[0])}{Colors.ENDC}"
             )
             self.logger.log("ERROR: Collony in cooldown preiod!")
-            return
+            return False
 
         def _Attack(*_):
             print("Performing attack: ", end=" ", flush=True)
@@ -325,7 +325,7 @@ class ColonyWars(HenoBase):
             )
             self.printSuccessMessage()
 
-        self.TryAction(_Attack, None)
+        return self.TryAction(_Attack, None)
 
     def CWDefend(self, battle=None, kit=None) -> bool:
         if battle == None:
@@ -378,7 +378,7 @@ class ColonyWars(HenoBase):
 
         self.TryAction(_Resolve, None)
 
-    def CWColonyHealth(self):
+    def CWColonyHealth(self, tcid=False):
         def _repair(_, i):
             print("Repair colony health:", end=" ", flush=True)
             self.logger.log(f"Repair colony health: {self.colony["Colony"]}")
@@ -409,24 +409,20 @@ class ColonyWars(HenoBase):
         if sel > 0 and sel < l2:
             self.TryAction(_repair, sel)
 
-    def CWGetAdvise(self):
+    def CWAdvisedTargets(self, only_hex=False) -> tuple[dict, dict]:
         col = self.colony["Colony"]
-        aa = self.contract_chargepod.call_decoded("getAdvisedCombatActions", col)
-        if len(aa) > 0:
-            print(f"{Colors.OKBLUE}Advised actions:{Colors.ENDC}")
-            for a in aa:
-                print(f"\U0001F534 {a}")
-
-        tt = self.contract_chargepod.call_decoded("getTerritoriesForCapture", 100)
-        if len(tt["territoryIds"]) > 0:
-            print(f"{Colors.OKBLUE}Territories availabe to capture:{Colors.ENDC}")
-            print(f"{tt['territoryIds']}")
-
         wt = self.contract_chargepod.call_decoded("getSupposedWeakTargets", col, 100)
         wtl = len(wt["targets"])
-        if wtl > 0:
-            wtt = []
-            for i in range(wtl):
+        wtt = []
+        for i in range(wtl):
+            if only_hex:
+                wtt.append(
+                    {
+                        "ID": (wt["targets"][i]),
+                        "Stake": wt["stakes"][i] / self.ZicoDividor,
+                    }
+                )
+            else:
                 wtt.append(
                     {
                         "Name": self.cns.rlookup(wt["targets"][i]),
@@ -434,64 +430,47 @@ class ColonyWars(HenoBase):
                         "Stake": wt["stakes"][i] / self.ZicoDividor,
                     }
                 )
-            print(f"{Colors.OKBLUE}Recommended attack targets:{Colors.ENDC}")
-            print(tabulate(wtt, headers="keys"))
-
         ter = self.contract_chargepod.call_decoded("getAllTerritoriesRaidStatus")
         tr = []
         for t in ter:
             if t["canRaid"] and t["controllingColony"] in wt["targets"]:
-                tr.append(
-                    {
-                        "ID": t["territoryId"],
-                        "territoryName": t["territoryName"],
-                        "Colony": self.cns.rlookup(t["controllingColony"]),
-                        "damageLevel": t["damageLevel"],
-                    }
-                )
-        if len(tr) > 0:
+                if only_hex:
+                    tr.append(
+                        {
+                            "ID": t["territoryId"],
+                            "Colony": t["controllingColony"],
+                            "damageLevel": t["damageLevel"],
+                        }
+                    )
+                else:
+                    tr.append(
+                        {
+                            "ID": t["territoryId"],
+                            "territoryName": t["territoryName"],
+                            "Colony": self.cns.rlookup(t["controllingColony"]),
+                            "damageLevel": t["damageLevel"],
+                        }
+                    )
+        return (wtt, tr)
+
+    def CWPrintAdvise(self):
+        col = self.colony["Colony"]
+        aa = self.contract_chargepod.call_decoded("getAdvisedCombatActions", col)
+        if len(aa) > 0:
+            print(f"{Colors.OKBLUE}Advised actions:{Colors.ENDC}")
+            for a in aa:
+                print(f"\U0001f534 {a}")
+
+        tt = self.contract_chargepod.call_decoded("getTerritoriesForCapture", 100)
+        if len(tt["territoryIds"]) > 0:
+            print(f"{Colors.OKBLUE}Territories availabe to capture:{Colors.ENDC}")
+            print(f"{tt['territoryIds']}")
+
+        colonies, terrains = self.CWAdvisedTargets()
+        if len(colonies) > 0:
+            print(f"{Colors.OKBLUE}Recommended attack targets:{Colors.ENDC}")
+            print(tabulate(colonies, headers="keys"))
+
+        if len(terrains) > 0:
             print(f"{Colors.OKBLUE}Ideal for Siege or Raid:{Colors.ENDC}")
-            print(tabulate(tr, headers="keys"))
-
-    def CWAIDefender(self):
-        print(
-            f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}"
-        )
-        self.logger.log("[AI Defender] Activated AI defender.")
-
-        def _bot_defend_battle(battle):
-            kits = self.colony["WarKits"]
-            for kit in kits:
-                if self.CWDefend(battle, kit):
-                    print(
-                        f"{Colors.OKGREEN}Succesfully defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}"
-                    )
-                    self.logger.log(
-                        f"[AI Defender] Succesfully defended battle: {self.bToHex(battle["battleId"])}"
-                    )
-                    return
-            print(
-                f"{Colors.FAIL}Failed to defended battle: {self.bToHex(battle["battleId"])}{Colors.ENDC}"
-            )
-            self.logger.log(
-                f"[AI Defender] Failed to defended battle: {self.bToHex(battle["battleId"])}"
-            )
-
-        def _bot_main_loop(_):
-            print("Checking for threats... ")
-
-            battles = self.CWGetAvailabeForDefend()
-
-            if len(battles) == 0:
-                print("No threats found")
-
-            if len(battles) > 0:
-                print(f"{Colors.WARNING}Found {len(battles)} threats!!!{Colors.ENDC}")
-                self.logger.log(f"[AI Defender] Found {len(battles)} threats!!!")
-
-                for b in battles:
-                    self.CallWithoutCrash(_bot_defend_battle, b)
-
-        while True:
-            self.CallWithoutCrash(_bot_main_loop)
-            time.sleep(self.delay_ai_defender)
+            print(tabulate(terrains, headers="keys"))

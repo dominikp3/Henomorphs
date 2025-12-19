@@ -18,8 +18,9 @@ config_schema = {
         "max_transaction_attempts": {"type": "integer", "minimum": 1},
         "random_action_on_fail": {"type": "integer", "minimum": 0},
         "delay": {"type": "number", "minimum": 0},
-        "ai_defender_delay": {"type": "number", "minimum": 0},
+        "ai_interval": {"type": "number", "minimum": 60},
         "debug": {"type": "boolean"},
+        "experimental": {"type": "boolean"},
         "dummy": {"type": "integer", "minimum": 0, "maximum": 2},
         "rpc": {"type": "string"},
         "log": {"type": "boolean"},
@@ -88,6 +89,17 @@ colony_config_schema = {
                     "name": {"type": "string"},
                 },
             },
+        },
+        "ai_offensive": {"type": "boolean"},  # Attack mode
+        "ai_offensive_stake": {"type": "number", "minimum": 0},  # Stake for attack
+        "ai_offensive_max_ds": {  # Max defstake of opponent
+            "type": "number",
+            "minimum": 0,
+        },
+        "ai_offensive_prefer_weak": {"type": "boolean"},  # Choose weekest targets
+        "ai_offensive_excluded": {  # List of excluded targets
+            "type": "array",
+            "items": {"type": "string", "pattern": r"^0[x][a-fA-F0-9]{64}$"},
         },
     },
     "additionalProperties": False,

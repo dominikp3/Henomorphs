@@ -79,7 +79,9 @@ def init() -> Henomorphs:
         exit()
 
     if daemon_mode:
-        hen.CWAIDefender()
+        from lib.CWAI import CWAI
+
+        CWAI(hen)
         exit()
 
     return hen

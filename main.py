@@ -69,7 +69,7 @@ def main():
         print("8) Change specializations")
         print("9) Colony Wars \U0001f3ae\U00002694")
         print(f"42) Auto update {hConf} (add / remove tokens)")
-        if hen.debug_mode:
+        if hen.experimental:
             print("101) Custom Read")
             print("102) Custom Write")
         print("0) Exit")
@@ -103,13 +103,19 @@ def main():
                 if input("Are you sure? [y/n]: ") == "y":
                     HenoAutoGenConfig.genConfig(hen)
             case "101":
-                hen.TestCustomRead(
-                    hen.SelectContract(), input("Function: "), hen.InputMultipleArgs()
-                )
+                if hen.experimental:
+                    hen.TestCustomRead(
+                        hen.SelectContract(),
+                        input("Function: "),
+                        hen.InputMultipleArgs(),
+                    )
             case "102":
-                hen.TestCustomWrite(
-                    hen.SelectContract(), input("Function: "), hen.InputMultipleArgs()
-                )
+                if hen.experimental:
+                    hen.TestCustomWrite(
+                        hen.SelectContract(),
+                        input("Function: "),
+                        hen.InputMultipleArgs(),
+                    )
             case "0":
                 exit()
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
@@ -264,6 +270,8 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
             f"{Colors.OKCYAN}18) Check Alliance \U0001f9d1\U0000200d\U0001f91d\U0000200d\U0001f9d1"
         )
         print(f"{Colors.OKCYAN}19) Tactical Advisor \U0001f9ed")
+        if hen.experimental:
+            print(f"{Colors.OKCYAN}20) Tactical Bot \U0001f916 [EXPERIMENTAL]")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
@@ -312,7 +320,12 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
             case "18":
                 hen.alliance.PrintAlliance()
             case "19":
-                hen.CWGetAdvise()
+                hen.CWPrintAdvise()
+            case "20":
+                if hen.experimental:
+                    from lib.CWAI import CWAI
+
+                    CWAI(hen)
             case "0":
                 return
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
