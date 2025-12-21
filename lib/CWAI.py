@@ -9,6 +9,8 @@ def CWAI(hen: Henomorphs):
 
     ai_interval = hen.config.get("ai_interval", 900)
 
+    ai_def = hen.colony.get("ai_deffensive", False)
+    ai_def_delay = hen.colony.get("ai_deffense_delay", 0)
     ai_ofn = hen.colony.get("ai_offensive", False)
     ai_ofn_stake = hen.colony.get("ai_offensive_stake", 500)
     ai_ofn_max_ds = hen.colony.get("ai_offensive_max_ds", 100)
@@ -18,6 +20,11 @@ def CWAI(hen: Henomorphs):
     ai_ofn_pref_target = hen.colony.get("ai_offensive_pref_target", [])
     ai_ofn_pref_target = [hen.hexToB(e) for e in ai_ofn_pref_target]
     random.shuffle(ai_ofn_pref_target)
+
+    if not ai_def and not ai_ofn:
+        print(f"{Colors.FAIL}All bot features is disabled! Exiting...{Colors.ENDC}")
+        hen.logger.log(f"All bot features is disabled! Exiting...")
+        exit(420)
 
     print(
         f"{Colors.WARNING}Activated AI defender. Use CTRL-C to terminate{Colors.ENDC}"
@@ -89,26 +96,6 @@ def CWAI(hen: Henomorphs):
         return False
 
     def _bot_main_loop(_):
-        print("Checking for threats... ")
-
-        battles = hen.CWGetAvailabeForDefend()
-        sieges = hen.CWGetSiegesAvailabeForDefend()
-        threats = len(battles) + len(sieges)
-
-        if threats == 0:
-            print("No threats found")
-        else:
-            print(f"{Colors.WARNING}Found {threats} threats!!!{Colors.ENDC}")
-            hen.logger.log(f"[AI Defender] Found {threats} threats!!!")
-
-            if len(battles) > 0:
-                for b in battles:
-                    hen.CallWithoutCrash(_bot_defend_battle, b)
-
-            if len(sieges) > 0:
-                for s in sieges:
-                    hen.CallWithoutCrash(_bot_defend_siege, s)
-
         if ai_ofn:  # Attack mode enabled
             cd = hen.contract_chargepod.call_decoded("getCombatCooldowns", col)
 
@@ -131,6 +118,28 @@ def CWAI(hen: Henomorphs):
                         break
             else:
                 print(f"Cooldown! {hen.secondsToHMS(max(cd))}")
+
+        if ai_def:
+            print("Checking for threats... ")
+            battles = hen.CWGetAvailabeForDefend()
+            sieges = hen.CWGetSiegesAvailabeForDefend()
+            threats = len(battles) + len(sieges)
+
+            if threats == 0:
+                print("No threats found")
+            else:
+                print(f"{Colors.WARNING}Found {threats} threats!!!{Colors.ENDC}")
+                hen.logger.log(f"[AI Defender] Found {threats} threats!!!")
+
+                if len(battles) > 0:
+                    for b in battles:
+                        if int(time.time()) - b["battleStartTime"] >= ai_def_delay:
+                            hen.CallWithoutCrash(_bot_defend_battle, b)
+
+                if len(sieges) > 0:
+                    for s in sieges:
+                        if int(time.time()) - s["siegeStartTime"] >= ai_def_delay:
+                            hen.CallWithoutCrash(_bot_defend_siege, s)
 
     while True:
         hen.CallWithoutCrash(_bot_main_loop)

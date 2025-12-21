@@ -91,6 +91,7 @@ colony_config_schema = {
             },
         },
         "ai_offensive": {"type": "boolean"},  # Attack mode
+        "ai_deffensive": {"type": "boolean"},  # Defense mode
         "ai_offensive_stake": {"type": "number", "minimum": 0},  # Stake for attack
         "ai_offensive_max_ds": {  # Max defstake of opponent
             "type": "number",
@@ -104,6 +105,11 @@ colony_config_schema = {
         "ai_offensive_pref_target": {  # List of prefered targets. WARN: This ignores max_ds and prefer_weak
             "type": "array",
             "items": {"type": "string", "pattern": r"^0[x][a-fA-F0-9]{64}$"},
+        },
+        "ai_deffense_delay": {  # Delay (s) from battle start to defense (if you wish to defense near end)
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5400,
         },
     },
     "additionalProperties": False,
