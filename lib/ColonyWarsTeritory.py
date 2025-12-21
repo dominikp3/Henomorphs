@@ -262,6 +262,8 @@ class ColonyWarsTeritory(ColonyWars):
                 i["territoryName"] = (
                     f"{Colors.WARNING}{i["territoryName"]}{Colors.ENDC}"
                 )
+            i["canRaid"] = self.GetColoredBool(i["canRaid"])
+            i["hasActiveSiege"] = self.GetColoredBool(i["hasActiveSiege"])
         for i in range(len(d)):
             d[i] = {
                 "ID": d[i].pop("territoryId"),
