@@ -135,11 +135,21 @@ def CWAI(hen: Henomorphs):
                     for b in battles:
                         if int(time.time()) - b["battleStartTime"] >= ai_def_delay:
                             hen.CallWithoutCrash(_bot_defend_battle, b)
+                        else:
+                            msg = (
+                                f"Skipping battle (delay): {hen.bToHex(b["battleId"])}"
+                            )
+                            print(msg)
+                            hen.logger.log(msg)
 
                 if len(sieges) > 0:
                     for s in sieges:
                         if int(time.time()) - s["siegeStartTime"] >= ai_def_delay:
                             hen.CallWithoutCrash(_bot_defend_siege, s)
+                        else:
+                            msg = f"Skipping siege (delay): {hen.bToHex(s["siegeId"])}"
+                            print(msg)
+                            hen.logger.log(msg)
 
     while True:
         hen.CallWithoutCrash(_bot_main_loop)
