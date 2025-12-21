@@ -69,24 +69,26 @@ class ColonyAlliance:
 
     def IsCAlliance(self, colony: bytes):
         self._get_alliance_data(False)
-        ad = self._alliance_data
-        awc = self._alliance_wallet_colonies
-        for wallet in ad["members"]:
-            for c in awc[wallet]:
-                if c == colony:
-                    return True
+        if self._alliance_stat == 1:
+            ad = self._alliance_data
+            awc = self._alliance_wallet_colonies
+            for wallet in ad["members"]:
+                for c in awc[wallet]:
+                    if c == colony:
+                        return True
         return False
 
     def IsTAlliance(self, tid: int):
         self._get_alliance_data()
-        ad = self._alliance_data
-        awc = self._alliance_wallet_colonies
-        act = self._alliance_col_ter
-        for wallet in ad["members"]:
-            for c in awc[wallet]:
-                for t in act[c]:
-                    if t == tid:
-                        return True
+        if self._alliance_stat == 1:
+            ad = self._alliance_data
+            awc = self._alliance_wallet_colonies
+            act = self._alliance_col_ter
+            for wallet in ad["members"]:
+                for c in awc[wallet]:
+                    for t in act[c]:
+                        if t == tid:
+                            return True
         return False
 
     def CAntiBetrayal(self, attackedCollony: bytes) -> bool:
