@@ -26,17 +26,32 @@ import traceback
 from lib.Summarizer import Summarizer
 
 
+def p_exc(e, msg):
+    e = "".join(traceback.format_exception(e))
+    print(f"{Colors.FAIL}{msg}:\n{e}{Colors.ENDC}")
+    try:
+        FileLogger().log(f"{msg}:\n{e}")
+    except:
+        pass
+
+
 def except_hook(exctype, value, _):
     if exctype == KeyboardInterrupt:
         print(f"{Colors.HEADER}Good Bye{Colors.ENDC}")
+        exit(0)
     else:
-        e = "".join(traceback.format_exception(value))
-        print(f"{Colors.FAIL}{e}{Colors.ENDC}")
-        try:
-            FileLogger().log(f"The script crashed:\n{e}")
-        except:
-            pass
+        p_exc(value, "The entire script crashed")
         exit(42)
+
+
+def excWrapper(c: callable):
+    try:
+        c()
+    except KeyboardInterrupt:
+        print(f"{Colors.FAIL}Operation cancelled by user!{Colors.ENDC}")
+        FileLogger().log("Operation cancelled by user!")
+    except Exception as e:
+        p_exc(e, "Current operation was terminated due to error")
 
 
 def main():
@@ -72,27 +87,32 @@ def main():
         if hen.experimental:
             print("101) Custom Read")
             print("102) Custom Write")
+            print("666) ILLEGAL! Positively do not use!!!")
         print("0) Exit")
         match (input("Select function: ")):
             case "1":
-                hen.PrintInfo()
+                excWrapper(lambda: hen.PrintInfo())
             case "2":
-                hen.Inspect()
+                excWrapper(lambda: hen.Inspect())
             case "3":
                 PerformAction(hen)
             case "4":
                 RepairWear(hen)
             case "5":
-                hen.RepairChargeSequence()
+                excWrapper(lambda: hen.RepairChargeSequence())
             case "6":
-                rewards = hen.GetPendingRewards()
-                hen.printPendingRewards(rewards)
-                if input("Claim? [y/n]: ") == "y":
-                    hen.ClaimAll(rewards["stakedCount"])
+
+                def f():
+                    rewards = hen.GetPendingRewards()
+                    hen.printPendingRewards(rewards)
+                    if input("Claim? [y/n]: ") == "y":
+                        hen.ClaimAll(rewards["stakedCount"])
+
+                excWrapper(f)
             case "7":
                 ApproveZico(hen)
             case "8":
-                hen.ChangeSpecializations()
+                excWrapper(lambda: hen.ChangeSpecializations())
             case "9":
                 ColonyWars(hen, summarizer)
             case "42":
@@ -101,34 +121,41 @@ def main():
                     + f"{Colors.WARNING}Is highly recommended to backup your current {hConf} file before use.{Colors.ENDC}"
                 )
                 if input("Are you sure? [y/n]: ") == "y":
-                    HenoAutoGenConfig.genConfig(hen)
+                    excWrapper(lambda: HenoAutoGenConfig.genConfig(hen))
             case "101":
                 if hen.experimental:
-                    hen.TestCustomRead(
-                        hen.SelectContract(),
-                        input("Function: "),
-                        hen.InputMultipleArgs(),
+                    excWrapper(
+                        lambda: hen.TestCustomRead(
+                            hen.SelectContract(),
+                            input("Function: "),
+                            hen.InputMultipleArgs(),
+                        )
                     )
             case "102":
                 if hen.experimental:
-                    hen.TestCustomWrite(
-                        hen.SelectContract(),
-                        input("Function: "),
-                        hen.InputMultipleArgs(),
+                    excWrapper(
+                        lambda: hen.TestCustomWrite(
+                            hen.SelectContract(),
+                            input("Function: "),
+                            hen.InputMultipleArgs(),
+                        )
                     )
+            case "666":
+                if hen.experimental:
+                    excWrapper(lambda: 1 / 0)
             case "0":
                 exit()
         summarizer.printSummary(hen.GetPol(), hen.GetZico(), hen.GetYlw())
 
 
-def PerformAction(hen):
+def PerformAction(hen: Henomorphs):
     def _match(x):
         match (x):
             case "1":
-                hen.PerformColonyActionSequence()
+                excWrapper(lambda: hen.PerformColonyActionSequence())
                 return True
             case "2":
-                hen.PerformColonyActionBatch()
+                excWrapper(lambda: hen.PerformColonyActionBatch())
                 return True
             case "0":
                 return True
@@ -163,10 +190,10 @@ def RepairWear(hen: Henomorphs):
     def _match(x):
         match (x):
             case "1":
-                hen.RepairWearSequence()
+                excWrapper(lambda: hen.RepairWearSequence())
                 return True
             case "2":
-                hen.RepairWearBatch()
+                excWrapper(lambda: hen.RepairWearBatch())
                 return True
             case "0":
                 return True
@@ -215,17 +242,41 @@ def ApproveZico(hen: Henomorphs):
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
-                hen.ApproveZico(hen.contract_nft_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveZico(
+                        hen.contract_nft_address, int(input("Value: "))
+                    )
+                )
             case "2":
-                hen.ApproveZico(hen.contract_chargepod_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveZico(
+                        hen.contract_chargepod_address, int(input("Value: "))
+                    )
+                )
             case "3":
-                hen.ApproveZico(hen.contract_staking_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveZico(
+                        hen.contract_staking_address, int(input("Value: "))
+                    )
+                )
             case "4":
-                hen.ApproveYLW(hen.contract_nft_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveYLW(
+                        hen.contract_nft_address, int(input("Value: "))
+                    )
+                )
             case "5":
-                hen.ApproveYLW(hen.contract_chargepod_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveYLW(
+                        hen.contract_chargepod_address, int(input("Value: "))
+                    )
+                )
             case "6":
-                hen.ApproveYLW(hen.contract_staking_address, int(input("Value: ")))
+                excWrapper(
+                    lambda: hen.ApproveYLW(
+                        hen.contract_staking_address, int(input("Value: "))
+                    )
+                )
             case "0":
                 return
 
@@ -271,57 +322,76 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
         )
         print(f"{Colors.OKCYAN}19) Tactical Advisor \U0001f9ed")
         if hen.experimental:
-            print(f"{Colors.OKCYAN}20) Tactical Bot \U0001f916 [EXPERIMENTAL]")
+            print(f"{Colors.OKCYAN}42) Tactical Bot \U0001f916 [EXPERIMENTAL]")
         print(f"{Colors.OKCYAN}0) Exit{Colors.ENDC}")
         match (input("Select function: ")):
             case "1":
-                hen.CWPrintStatus()
+                excWrapper(lambda: hen.CWPrintStatus())
             case "2":
-                hen.CWPrintBattleHistory()
+                excWrapper(lambda: hen.CWPrintBattleHistory())
             case "3":
-                hen.CWAttack(
-                    input("Victim collony ID: "), float(input("Stake amount [ZICO]: "))
+                excWrapper(
+                    lambda: hen.CWAttack(
+                        input("Victim collony ID: "),
+                        float(input("Stake amount [ZICO]: ")),
+                    )
                 )
             case "4":
-                hen.CWDefend()
+                excWrapper(lambda: hen.CWDefend())
             case "5":
-                hen.CWResolveBattle()
+                excWrapper(lambda: hen.CWResolveBattle())
             case "6":
-                hen.CWCompareWithColony(input("Potential victim collony ID: "))
+                excWrapper(
+                    lambda: hen.CWCompareWithColony(
+                        input("Potential victim collony ID: ")
+                    )
+                )
             case "7":
-                hen.CWRanking(
-                    input("Show addresses [y/n]: ") == "y",
-                    input("Show defensive stake [y/n]: ") == "y",
+                excWrapper(
+                    lambda: hen.CWRanking(
+                        input("Show addresses [y/n]: ") == "y",
+                        input("Show defensive stake [y/n]: ") == "y",
+                    )
                 )
             case "8":
-                hen.CWPrintCurrentBattles()
+                excWrapper(lambda: hen.CWPrintCurrentBattles())
             case "9":
-                hen.CWPrintWeatherForecast()
+                excWrapper(lambda: hen.CWPrintWeatherForecast())
             case "10":
-                hen.CWColonyHealth()
+                excWrapper(lambda: hen.CWColonyHealth())
             case "11":
-                hen.CWGetMyTeritoriesStstus()
+                excWrapper(lambda: hen.CWGetMyTeritoriesStstus())
             case "12":
-                hen.CWPrintCurrentSieges()
+                excWrapper(lambda: hen.CWPrintCurrentSieges())
             case "13":
-                hen.CWSiege(
-                    int(input("Teritory ID: ")), float(input("Stake amount [ZICO]: "))
+                excWrapper(
+                    lambda: hen.CWSiege(
+                        int(input("Teritory ID: ")),
+                        float(input("Stake amount [ZICO]: ")),
+                    )
                 )
             case "14":
-                hen.CWDefendSiege()
+                excWrapper(lambda: hen.CWDefendSiege())
             case "15":
-                hen.CWResolveSiege()
+                excWrapper(lambda: hen.CWResolveSiege())
             case "16":
-                hen.CWRaidTeritory(
-                    int(input("Teritory ID: ")), float(input("Stake amount [ZICO]: "))
+                excWrapper(
+                    lambda: hen.CWRaidTeritory(
+                        int(input("Teritory ID: ")),
+                        float(input("Stake amount [ZICO]: ")),
+                    )
                 )
             case "17":
-                hen.CWPrintTeritories(input("Show addresses [y/n]: ") == "y")
+                excWrapper(
+                    lambda: hen.CWPrintTeritories(
+                        input("Show addresses [y/n]: ") == "y"
+                    )
+                )
             case "18":
-                hen.alliance.PrintAlliance()
+                excWrapper(lambda: hen.alliance.PrintAlliance())
             case "19":
-                hen.CWPrintAdvise()
-            case "20":
+                excWrapper(lambda: hen.CWPrintAdvise())
+            case "42":
                 if hen.experimental:
                     from lib.CWAI import CWAI
 
