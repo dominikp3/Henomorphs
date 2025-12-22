@@ -425,7 +425,7 @@ class ColonyWars(HenoBase):
             colonies = [c["colonyId"] for c in colonies]
             for c in colonies:
                 ds = self.dsi.get_col_dstake(c)
-                if ds <= threshold and not self.alliance.IsCAlliance(c):
+                if ds <= threshold and not self.alliance.CAntiBetrayal(c, True):
                     wt["targets"].append(c)
                     wt["stakes"].append(ds * self.ZicoDividor)
         for pc in p_col:

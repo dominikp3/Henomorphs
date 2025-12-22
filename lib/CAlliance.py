@@ -101,13 +101,15 @@ class ColonyAlliance:
                             return True
         return False
 
-    def CAntiBetrayal(self, attackedCollony: bytes) -> bool:
+    def CAntiBetrayal(self, attackedCollony: bytes, quiet=False) -> bool:
         """Return True if attacked colony is in alliance"""
         if attackedCollony == self.hen.hexToB(self.hen.colony["Colony"]):
-            print(f"{Colors.FAIL}You trying to attack yourself!{Colors.ENDC}")
+            if not quiet:
+                print(f"{Colors.FAIL}You trying to attack yourself!{Colors.ENDC}")
             return True
         if self.hen.anti_betrayal and self.IsCAlliance(attackedCollony):
-            print(f"{Colors.FAIL}Betrayal!{Colors.ENDC}")
+            if not quiet:
+                print(f"{Colors.FAIL}Betrayal!{Colors.ENDC}")
             return True
         return False
 
