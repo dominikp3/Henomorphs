@@ -9,8 +9,8 @@ class ColonyNameSystem:
 
     def _get_names(self):
         if not self._names_map:
-            self._names_map = {}
             d = self.contract.call_decoded("getColonyRanking", 0, 1000)
+            self._names_map = {}
             for i in d:
                 self._names_map[i["name"]] = i["colonyId"]
         return self._names_map

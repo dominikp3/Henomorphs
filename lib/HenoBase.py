@@ -135,8 +135,10 @@ class HenoBase:
         self.anti_betrayal = self.config.get("anti_betrayal", True)
         self.cns = ColonyNameSystem(self.contract_chargepod)
         from lib.CAlliance import ColonyAlliance
+        from lib.CDefStake import CDefStake
 
         self.alliance = ColonyAlliance(self)
+        self.dsi = CDefStake(self)
 
     @staticmethod
     def SaveKey(account, key, password):

@@ -1,3 +1,4 @@
+from time import time
 from lib.Colors import Colors
 from lib.Henomorphs import Henomorphs
 
@@ -7,17 +8,19 @@ class ColonyAlliance:
     _alliance_data: dict = None
     _alliance_wallet_colonies: dict = None
     _alliance_col_ter: dict = None
+    _last_t = 0
+    _last_t_2 = 0
 
     def __init__(self, heno: Henomorphs):
         self.hen = heno
 
     def _get_alliance_data(self, get_territories: bool = True):
-        if self._alliance_stat < 0:
+        if self._alliance_stat < 0 or time() - self._last_t > 3600:
+            self._alliance_stat = -1
             c = self.hen.contract_chargepod.call_decoded(
                 "isColonyProtectedByAlliance", self.hen.colony["Colony"]
             )
-            self._alliance_stat = 1 if c["protected"] else 0
-            if self._alliance_stat == 1:
+            if c["protected"]:
                 self._alliance_wallet_colonies = {}
                 self._alliance_data = self.hen.contract_chargepod.call_decoded(
                     "getAllianceInfo", c["allianceId"]
@@ -30,17 +33,24 @@ class ColonyAlliance:
                     )
                     for col in colonies:
                         self._alliance_wallet_colonies[wallet].append(col["colonyId"])
-        if self._alliance_stat == 1 and get_territories and not self._alliance_col_ter:
-            self._alliance_col_ter = {}
+            self._alliance_stat = 1 if c["protected"] else 0
+            self._last_t = time()
+        if (
+            self._alliance_stat == 1
+            and get_territories
+            and (not self._alliance_col_ter or time() - self._last_t_2 > 3600)
+        ):
             ter = self.hen.contract_chargepod.call_decoded(
                 "getAllTerritoriesRaidStatus"
             )
+            self._alliance_col_ter = {}
             for cList in self._alliance_wallet_colonies.values():
                 for c in cList:
                     self._alliance_col_ter[c] = []
                     for t in ter:
                         if t["controllingColony"] == c:
                             self._alliance_col_ter[c].append(t["territoryId"])
+            self._last_t_2 = time()
 
     def PrintAlliance(self):
         self._get_alliance_data()

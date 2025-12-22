@@ -101,13 +101,11 @@ class ColonyWars(HenoBase):
         d = self.contract_chargepod.call_decoded(
             "getSeasonWarPrizeRanking", self.colony["Season"], 1000
         )
+        if defStake:
+            self.dsi.get_stakes(d)
         for i in d:
             if defStake:
-                dsi = self.contract_chargepod.call_decoded(
-                    "getDefensiveStakeInfo", i["colonyId"]
-                )
-                i["DefStake"] = dsi["currentStake"] / self.ZicoDividor
-                print(self.ChickChar, end=" ", flush=True)
+                i["DefStake"] = self.dsi.get_col_dstake(i["colonyId"])
             isMy = i["colonyId"] == self.hexToB(self.colony["Colony"])
             isAlliance = self.alliance.IsCAlliance(i["colonyId"])
             i["Name"] = self.cns.rlookup(i["colonyId"])
@@ -409,9 +407,31 @@ class ColonyWars(HenoBase):
         if sel > 0 and sel < l2:
             self.TryAction(_repair, sel)
 
-    def CWAdvisedTargets(self, only_hex=False) -> tuple[dict, dict]:
+    def CWAdvisedTargets(
+        self, only_hex=False, s_rev: bool = False, p_col: list[bytes] = []
+    ) -> tuple[dict, dict]:
         col = self.colony["Colony"]
-        wt = self.contract_chargepod.call_decoded("getSupposedWeakTargets", col, 100)
+        threshold = self.colony.get("weak_defstake_threshold", 0)
+        wt = {"targets": [], "stakes": []}
+        if threshold <= 0:
+            wt = self.contract_chargepod.call_decoded(
+                "getSupposedWeakTargets", col, 100
+            )
+        else:
+            colonies = self.contract_chargepod.call_decoded(
+                "getSeasonWarPrizeRanking", self.colony["Season"], 1000
+            )
+            self.dsi.get_stakes(colonies)
+            colonies = [c["colonyId"] for c in colonies]
+            for c in colonies:
+                ds = self.dsi.get_col_dstake(c)
+                if ds <= threshold and not self.alliance.IsCAlliance(c):
+                    wt["targets"].append(c)
+                    wt["stakes"].append(ds * self.ZicoDividor)
+        for pc in p_col:
+            if pc not in wt["targets"]:
+                wt["targets"].append(pc)
+                wt["stakes"].append(self.dsi.get_col_dstake(pc) * self.ZicoDividor)
         wtl = len(wt["targets"])
         wtt = []
         for i in range(wtl):
@@ -426,31 +446,38 @@ class ColonyWars(HenoBase):
                 wtt.append(
                     {
                         "Name": self.cns.rlookup(wt["targets"][i]),
-                        "ID": self.bToHex(wt["targets"][i]),
+                        "ID": wt["targets"][i],
                         "Stake": wt["stakes"][i] / self.ZicoDividor,
                     }
                 )
+        wtt.sort(key=lambda x: x["Stake"], reverse=s_rev)
+        wtt.sort(key=lambda x: x["ID"] in p_col, reverse=True)
         ter = self.contract_chargepod.call_decoded("getAllTerritoriesRaidStatus")
         tr = []
-        for t in ter:
-            if t["canRaid"] and t["controllingColony"] in wt["targets"]:
-                if only_hex:
-                    tr.append(
-                        {
-                            "ID": t["territoryId"],
-                            "Colony": t["controllingColony"],
-                            "damageLevel": t["damageLevel"],
-                        }
-                    )
-                else:
-                    tr.append(
-                        {
-                            "ID": t["territoryId"],
-                            "territoryName": t["territoryName"],
-                            "Colony": self.cns.rlookup(t["controllingColony"]),
-                            "damageLevel": t["damageLevel"],
-                        }
-                    )
+        for co in wtt:
+            c = co["ID"]
+            for t in ter:
+                if t["controllingColony"] == c and t["canRaid"]:
+                    if only_hex:
+                        tr.append(
+                            {
+                                "ID": t["territoryId"],
+                                "Colony": t["controllingColony"],
+                                "damageLevel": t["damageLevel"],
+                            }
+                        )
+                    else:
+                        tr.append(
+                            {
+                                "ID": t["territoryId"],
+                                "territoryName": t["territoryName"],
+                                "Colony": self.cns.rlookup(t["controllingColony"]),
+                                "damageLevel": t["damageLevel"],
+                            }
+                        )
+        if not only_hex:
+            for t in wtt:
+                t["ID"] = self.bToHex(t["ID"])
         return (wtt, tr)
 
     def CWPrintAdvise(self):

@@ -90,6 +90,7 @@ colony_config_schema = {
                 },
             },
         },
+        "weak_defstake_threshold": {"type": "number", "minimum": 0},
         "ai_offensive": {"type": "boolean"},  # Attack mode
         "ai_deffensive": {"type": "boolean"},  # Defense mode
         "ai_offensive_stake": {"type": "number", "minimum": 0},  # Stake for attack

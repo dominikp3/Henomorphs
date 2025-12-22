@@ -233,7 +233,12 @@ Po utworzeniu pliku konieczne jest ustawienie parametrów według własnych pref
         },
 
         ...
-    ]
+    ],
+
+    // Alternatywne działanie funkcji 'Tactical Advisor'
+    // Pozwala wybrać próg deffensive stake, od którego
+    // są wyświetlane kolonie jako polecane słabe cele do ataku.
+    "weak_defstake_threshold": (number),
 }
 ```
 

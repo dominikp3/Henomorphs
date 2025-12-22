@@ -100,20 +100,16 @@ def CWAI(hen: Henomorphs):
             cd = hen.contract_chargepod.call_decoded("getCombatCooldowns", col)
 
             if cd[0] == 0:  # No cooldowns
-                colonies, terrains = hen.CWAdvisedTargets(True)
-                colonies.sort(key=lambda x: x["Stake"], reverse=not ai_ofn_prefer_weak)
+                colonies, terrains = hen.CWAdvisedTargets(
+                    True, not ai_ofn_prefer_weak, ai_ofn_pref_target
+                )
                 colonies = [c for c in colonies if c["Stake"] <= ai_ofn_max_ds]
-                colonies_ids = ai_ofn_pref_target + [c["ID"] for c in colonies]
-                colonies_ids = [c for c in colonies_ids if c not in ai_ofn_excl]
-                terrains_ids = []
-                for c in colonies_ids:
-                    for t in terrains:
-                        if t["Colony"] == c:
-                            terrains_ids.append(t["ID"])
-                for t in terrains_ids[:3]:
+                col_ids = [c["ID"] for c in colonies if c["ID"] not in ai_ofn_excl]
+                ter_ids = [t["ID"] for t in terrains if t["Colony"] not in ai_ofn_excl]
+                for t in ter_ids[:3]:
                     if hen.CallWithoutCrash(_bot_siege, t):
                         break
-                for c in colonies_ids[:3]:
+                for c in col_ids[:3]:
                     if hen.CallWithoutCrash(_bot_attack, c):
                         break
             else:
