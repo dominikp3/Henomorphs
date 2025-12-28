@@ -384,7 +384,8 @@ def ColonyWars(hen: Henomorphs, summarizer: Summarizer):
             case "17":
                 excWrapper(
                     lambda: hen.CWPrintTeritories(
-                        input("Show addresses [y/n]: ") == "y"
+                        input("Show addresses [y/n]: ") == "y",
+                        input("Show defensive stake [y/n]: ") == "y",
                     )
                 )
             case "18":

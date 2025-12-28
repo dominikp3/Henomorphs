@@ -178,7 +178,7 @@ class HenoBase:
                     print(f"Increasing {s}: {v} -> {call_function[s]}")
 
             # "gas"
-            for i in ["maxPriorityFeePerGas", "maxFeePerGas"]:
+            for i in ["maxPriorityFeePerGas", "maxFeePerGas", "gas"]:
                 mul(i)
 
         def clamp_gas(callParam, confParam):

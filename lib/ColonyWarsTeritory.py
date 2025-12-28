@@ -7,12 +7,14 @@ from lib.Colors import Colors
 
 class ColonyWarsTeritory(ColonyWars):
     _MyTeritories: list[int] | None = None
+    _mt_last_t = 0
 
     def CWGetMyTeritories(self):
-        if self._MyTeritories is None:
+        if self._MyTeritories is None or time() - self._mt_last_t > 3600:
             self._MyTeritories = self.contract_chargepod.call_decoded(
                 "getColonyTerritories", self.colony["Colony"]
             )
+            self._mt_last_t = time()
         return self._MyTeritories
 
     def CWTPSColorOp(self, d: dict):
@@ -69,7 +71,7 @@ class ColonyWarsTeritory(ColonyWars):
 
     def CWGetUnresolvedSieges(self):
         ss = []
-        d = self.contract_chargepod.call_decoded("getActiveTerritorySeiges")
+        d = self.contract_chargepod.call_decoded("getActiveTerritorySieges")
         for s in d:
             colony = self.hexToB(self.colony["Colony"])
             if s["attackerColony"] == colony or s["defenderColony"] == colony:
@@ -241,9 +243,11 @@ class ColonyWarsTeritory(ColonyWars):
 
         self.TryAction(_Resolve, None)
 
-    def CWPrintTeritories(self, showAddress: bool = False):
+    def CWPrintTeritories(self, showAddress: bool = False, defStake: bool = False):
         d = self.contract_chargepod.call_decoded("getAllTerritoriesRaidStatus")
         for i in d:
+            if defStake:
+                i["DefStake"] = self.dsi.get_col_dstake(i["controllingColony"])
             isMy = i["territoryId"] in self.CWGetMyTeritories()
             isAlliance = self.alliance.IsTAlliance(i["territoryId"])
             i["ColonyName"] = self.cns.rlookup(i["controllingColony"])

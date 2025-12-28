@@ -81,6 +81,7 @@ class ColonyWars(HenoBase):
             0,
             1000,
         )["battles"]
+        d.sort(key=lambda x: x["battleStartTime"])
         for i in d:
             i["battleStartTime"] = self.timestampToStr(i["battleStartTime"])
             i["battleId"] = self.bToHex(i["battleId"])
